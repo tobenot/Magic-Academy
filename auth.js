@@ -1,8 +1,13 @@
-// 注册表单提交处理
-document.getElementById('register-form').addEventListener('submit', async (event) => {
+// 获取表单和按钮元素
+const authForm = document.getElementById('auth-form');
+const registerButton = document.getElementById('register-button');
+const loginButton = document.getElementById('login-button');
+
+// 注册按钮点击事件处理
+registerButton.addEventListener('click', async (event) => {
     event.preventDefault();
-    const username = document.getElementById('register-username').value;
-    const password = document.getElementById('register-password').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/register`, {
@@ -29,11 +34,11 @@ document.getElementById('register-form').addEventListener('submit', async (event
 
 const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
 
-// 登录表单提交处理
-document.getElementById('login-form').addEventListener('submit', async (event) => {
+// 登录按钮点击事件处理
+loginButton.addEventListener('click', async (event) => {
     event.preventDefault();
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
 
     try {
         const response = await fetch(`${API_BASE_URL}/login`, {

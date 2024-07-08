@@ -1,12 +1,22 @@
+/* 默认字体设置 */
 body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Cinzel', serif; /* 默认英文字体 */
     background: url('background.jpg') no-repeat center center fixed;
     background-size: cover;
     color: #fff;
 }
+
+/* 中文字体覆盖 */
+body[lang="zh"], 
+.game-title[lang="zh"], 
+.auth-form input[lang="zh"], 
+.auth-form button[lang="zh"] {
+    font-family: 'Noto Serif SC', serif;
+}
+
 
 #auth-container {
     position: absolute;
@@ -21,20 +31,18 @@ body {
 }
 
 .game-title {
-    font-family: 'Cinzel', serif;
-    font-size: 36px;
     color: #FFD700;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    font-size: 36px; /* 默认字体大小 */
+}
+
+/* 针对中文设置字体大小 */
+:lang(zh) .game-title {
+    font-size: 24px;
 }
 
 .auth-form {
     margin: 20px 0;
-}
-
-.auth-form h2 {
-    font-family: 'Cinzel', serif;
-    font-size: 24px;
-    margin-bottom: 20px;
 }
 
 .auth-form input {
@@ -46,8 +54,13 @@ body {
     font-size: 16px;
 }
 
+.button-container {
+    display: flex;
+    justify-content: space-around;
+}
+
 .auth-form button {
-    width: 85%;
+    width: 40%;
     padding: 10px;
     margin: 10px 0;
     background: #FFD700;
