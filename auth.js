@@ -27,7 +27,7 @@ document.getElementById('register-form').addEventListener('submit', async (event
     }
 });
 
-const API_BASE_URL = 'https://magic-academy-backend-ag6j2n4pv-tobenots-projects.vercel.app';
+const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
 
 // 登录表单提交处理
 document.getElementById('login-form').addEventListener('submit', async (event) => {
