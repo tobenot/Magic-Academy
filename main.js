@@ -4,8 +4,9 @@ class MainScene extends Phaser.Scene {
     }
     
     preload() {
-        this.load.tilemapTiledJSON('magicAcademy', 'assets/town.json');
-        this.load.image('tiles', 'assets/blockPack_tilesheet.png');
+        const timestamp = new Date().getTime();
+        this.load.tilemapTiledJSON('magicAcademy', `assets/town.json?v=${timestamp}`);
+        this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
     }
 
     create() {
@@ -23,7 +24,8 @@ class BattleScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image('tiles', 'assets/blockPack_tilesheet.png');
+        const timestamp = new Date().getTime();
+        this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
     }
 
     create() {

@@ -1,11 +1,9 @@
-import { config } from './main.js';
+const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
 
 // 获取表单和按钮元素
 const authForm = document.getElementById('auth-form');
 const registerButton = document.getElementById('register-button');
 const loginButton = document.getElementById('login-button');
-
-const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
 
 // 注册按钮点击事件处理
 registerButton.addEventListener('click', async (event) => {
@@ -68,8 +66,10 @@ loginButton.addEventListener('click', async (event) => {
             document.getElementById('game-container').style.display = 'block';
 
             // 初始化和启动 Phaser 游戏
-            const game = new Phaser.Game(config);
-            game.scene.start('MainScene');
+            import('./main.js').then(module => {
+                const game = new Phaser.Game(module.config);
+                game.scene.start('MainScene');
+            });
         }
     } catch (error) {
         console.error('Error:', error);
