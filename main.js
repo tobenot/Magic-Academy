@@ -43,24 +43,27 @@ class MainScene extends Phaser.Scene {
     }
 
     update() {
-        if (this.cursors.left.isDown) {
+        const cursors = this.joystick.createCursorKeys();
+    
+        if (cursors.left.isDown) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (this.cursors.right.isDown) {
+        } else if (cursors.right.isDown) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
             this.player.setVelocityX(0);
             this.player.anims.stop();
         }
-        if (this.cursors.up.isDown) {
+    
+        if (cursors.up.isDown) {
             this.player.setVelocityY(-160);
-        } else if (this.cursors.down.isDown) {
+        } else if (cursors.down.isDown) {
             this.player.setVelocityY(160);
         } else {
             this.player.setVelocityY(0);
         }
-    }
+    }    
 }
 
 class BattleScene extends Phaser.Scene {
@@ -102,24 +105,27 @@ class BattleScene extends Phaser.Scene {
     }
 
     update() {
-        if (this.cursors.left.isDown) {
+        const cursors = this.joystick.createCursorKeys();
+    
+        if (cursors.left.isDown) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (this.cursors.right.isDown) {
+        } else if (cursors.right.isDown) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
             this.player.setVelocityX(0);
             this.player.anims.stop();
         }
-        if (this.cursors.up.isDown) {
+    
+        if (cursors.up.isDown) {
             this.player.setVelocityY(-160);
-        } else if (this.cursors.down.isDown) {
+        } else if (cursors.down.isDown) {
             this.player.setVelocityY(160);
         } else {
             this.player.setVelocityY(0);
         }
-    }
+    }    
 
     generateRandomMap(width, height) {
         const map = [];
@@ -145,7 +151,16 @@ const config = {
         }
     },
     scene: [MainScene, BattleScene],
-    parent: 'game-container'
+    parent: 'game-container',
+    plugins: {
+        scene: [
+            {
+                key: 'rexVirtualJoystick',
+                plugin: rexvirtualjoystickplugin,
+                mapping: 'rexVirtualJoystick'
+            }
+        ]
+    }
 };
 
 function startGame() {
