@@ -1,3 +1,53 @@
+class MainScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MainScene' });
+    }
+    
+    preload() {
+        this.load.tilemapTiledJSON('magicAcademy', 'assets/town.json');
+        this.load.image('tiles', 'assets/tileset.png');
+    }
+
+    create() {
+        const map = this.make.tilemap({ key: 'magicAcademy' });
+        const tileset = map.addTilesetImage('tileset', 'tiles');
+        const layer = map.createLayer('Tile Layer 1', tileset, 0, 0);
+
+        console.log('进入魔法学院');
+    }
+}
+
+class BattleScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'BattleScene' });
+    }
+
+    preload() {
+        this.load.image('tiles', 'assets/tileset.png');
+    }
+
+    create() {
+        const mapData = this.generateRandomMap(20, 20);
+        const map = this.make.tilemap({ data: mapData, tileWidth: 32, tileHeight: 32 });
+        const tileset = map.addTilesetImage('tileset', null, 32, 32);
+        const layer = map.createLayer(0, tileset, 0, 0);
+
+        console.log('进入战斗场景');
+    }
+
+    generateRandomMap(width, height) {
+        const map = [];
+        for (let y = 0; y < height; y++) {
+            const row = [];
+            for (let x = 0; x < width; x++) {
+                row.push(Math.floor(Math.random() * 10));
+            }
+            map.push(row);
+        }
+        return map;
+    }
+}
+
 const config = {
     type: Phaser.AUTO,
     width: window.innerWidth,
@@ -8,25 +58,8 @@ const config = {
             gravity: { y: 300 }
         }
     },
-    scene: {
-        preload: preload,
-        create: create
-    }
+    scene: [MainScene, BattleScene],
+    parent: 'game-container'
 };
 
-const game = new Phaser.Game(config);
-
-function preload () {
-    this.load.setBaseURL('https://labs.phaser.io');
-
-    this.load.image('sky', 'assets/skies/sky4.png');
-}
-
-function create () {
-    const background = this.add.image(0, 0, 'sky').setOrigin(0, 0);
-    background.setDisplaySize(this.sys.game.config.width, this.sys.game.config.height);
-}
-
-window.addEventListener('resize', () => {
-    game.scale.resize(window.innerWidth, window.innerHeight);
-});
+export { config, MainScene, BattleScene };

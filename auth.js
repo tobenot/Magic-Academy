@@ -1,7 +1,11 @@
+import { config } from './main.js';
+
 // 获取表单和按钮元素
 const authForm = document.getElementById('auth-form');
 const registerButton = document.getElementById('register-button');
 const loginButton = document.getElementById('login-button');
+
+const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
 
 // 注册按钮点击事件处理
 registerButton.addEventListener('click', async (event) => {
@@ -32,8 +36,6 @@ registerButton.addEventListener('click', async (event) => {
     }
 });
 
-const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
-
 // 登录按钮点击事件处理
 loginButton.addEventListener('click', async (event) => {
     event.preventDefault();
@@ -57,9 +59,17 @@ loginButton.addEventListener('click', async (event) => {
 
         const data = await response.json();
         alert(data.message);
-        
+
         if (data.message === '登录成功') {
+            // 隐藏身份验证容器和主菜单图像
             document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'none';
+            // 显示游戏容器
+            document.getElementById('game-container').style.display = 'block';
+
+            // 初始化和启动 Phaser 游戏
+            const game = new Phaser.Game(config);
+            game.scene.start('MainScene');
         }
     } catch (error) {
         console.error('Error:', error);

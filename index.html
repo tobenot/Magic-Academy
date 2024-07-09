@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="game-container"></div>
+    <div id="game-container" style="display: none;"></div> <!-- 初始隐藏 -->
     <div id="auth-container">
         <h1 class="game-title">Heart World and the Magic Academy</h1>
         <h1 class="game-title" lang="zh">心界与魔法学院</h1>
@@ -21,8 +21,11 @@
             </div>
         </form>
     </div>
+    <!-- 添加主菜单图像 -->
+    <div id="main-menu" style="text-align: center;">
+        <img src="assets/main_menu.jfif" alt="Main Menu" style="max-width: 100%; height: auto;">
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
-    <script type="module" src="main.js"></script>
-    <script src="auth.js"></script>
+    <script type="module" src="auth.js"></script> <!-- 单独引用 auth.js -->
 </body>
 </html>
