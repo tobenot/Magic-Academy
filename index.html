@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>心界与魔法学院</title>
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -29,7 +28,12 @@
     <script type="module">
         // 动态添加时间戳
         const timestamp = new Date().getTime();
-        
+
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `styles.css?v=${timestamp}`;
+        document.head.appendChild(link);
+
         const mainScript = document.createElement('script');
         mainScript.type = 'module';
         mainScript.src = `main.js?t=${timestamp}`;
