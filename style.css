@@ -80,3 +80,10 @@ body[lang="zh"],
         width: 400px;
     }
 }
+/* 对于宽度小于768px的屏幕（如竖屏手机），调整样式 */
+@media (max-width: 768px) {
+    #auth-container {
+        width: 90%; /* 让宽度占屏幕的90% */
+        max-width: 400px;
+    }
+}
