@@ -25,7 +25,10 @@ class BaseScene extends Phaser.Scene {
         // 检查是否在移动设备上
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
-        
+
+        // 尝试打印插件
+        console.log('rexVirtualJoystick plugin:', this.plugins.get('rexVirtualJoystick'));
+
         // 如果是在移动设备上，则创建虚拟摇杆
         if (this.isMobile) {
             this.joystick = this.plugins.get('rexVirtualJoystick').add(this, {
