@@ -1,24 +1,11 @@
-// main.js
-
-class MainScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'MainScene' });
-    }
-    
-    preload() {
+class BaseScene extends Phaser.Scene {
+    preloadAssets() {
         const timestamp = new Date().getTime();
-        this.load.tilemapTiledJSON('magicAcademy', `assets/town.json?v=${timestamp}`);
         this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
         this.load.spritesheet('player', `assets/main_menu.jfif?v=${timestamp}`, { frameWidth: 32, frameHeight: 48 });
     }
 
-    create() {
-        const map = this.make.tilemap({ key: 'magicAcademy' });
-        const tileset = map.addTilesetImage('tileset', 'tiles');
-        const layer = map.createLayer('Tile Layer 1', tileset, 0, 0);
-
-        this.player = this.physics.add.sprite(100, 100, 'player');
-
+    createPlayerAnims() {
         this.anims.create({
             key: 'left',
             frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }),
@@ -32,19 +19,30 @@ class MainScene extends Phaser.Scene {
             frameRate: 10,
             repeat: -1
         });
-
-        this.cursors = this.input.keyboard.createCursorKeys();
-        
-        // 碰撞设置
-        this.physics.add.collider(this.player, layer);
-        layer.setCollisionByExclusion([-1]);
-
-        console.log('进入魔法学院');
     }
 
-    update() {
-        const cursors = this.joystick.createCursorKeys();
-    
+    createJoystick() {
+        // 检查是否在移动设备上
+        this.isMobile = Phaser.Device.OS.iOS || Phaser.Device.OS.Android;
+        
+        // 如果是在移动设备上，则创建虚拟摇杆
+        if (this.isMobile) {
+            this.joystick = this.plugins.get('rexVirtualJoystick').add(this, {
+                x: 100,
+                y: this.cameras.main.height - 100,
+                radius: 50,
+                base: this.add.circle(0, 0, 50, 0x888888),
+                thumb: this.add.circle(0, 0, 25, 0xcccccc),
+                dir: '8dir',
+                forceMin: 16,
+                fixed: true
+            });
+        }
+    }
+
+    updatePlayerMovement() {
+        const cursors = this.joystick ? this.joystick.createCursorKeys() : this.cursors;
+
         if (cursors.left.isDown) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
@@ -55,7 +53,7 @@ class MainScene extends Phaser.Scene {
             this.player.setVelocityX(0);
             this.player.anims.stop();
         }
-    
+
         if (cursors.up.isDown) {
             this.player.setVelocityY(-160);
         } else if (cursors.down.isDown) {
@@ -63,18 +61,52 @@ class MainScene extends Phaser.Scene {
         } else {
             this.player.setVelocityY(0);
         }
-    }    
+    }
+
+    update() {
+        this.updatePlayerMovement();
+    }
 }
 
-class BattleScene extends Phaser.Scene {
+class MainScene extends BaseScene {
+    constructor() {
+        super({ key: 'MainScene' });
+    }
+    
+    preload() {
+        const timestamp = new Date().getTime();
+        this.load.tilemapTiledJSON('magicAcademy', `assets/town.json?v=${timestamp}`);
+        this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
+        this.preloadAssets();
+    }
+
+    create() {
+        const map = this.make.tilemap({ key: 'magicAcademy' });
+        const tileset = map.addTilesetImage('tileset', 'tiles');
+        const layer = map.createLayer('Tile Layer 1', tileset, 0, 0);
+
+        this.player = this.physics.add.sprite(100, 100, 'player');
+
+        this.createPlayerAnims();
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.createJoystick();
+
+        // 碰撞设置
+        this.physics.add.collider(this.player, layer);
+        layer.setCollisionByExclusion([-1]);
+
+        console.log('进入魔法学院');
+    }
+}
+
+class BattleScene extends BaseScene {
     constructor() {
         super({ key: 'BattleScene' });
     }
 
     preload() {
         const timestamp = new Date().getTime();
-        this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
-        this.load.spritesheet('player', `assets/main_menu.jfif?v=${timestamp}`, { frameWidth: 32, frameHeight: 48 });
+        this.preloadAssets();
     }
 
     create() {
@@ -85,47 +117,12 @@ class BattleScene extends Phaser.Scene {
 
         this.player = this.physics.add.sprite(100, 100, 'player');
 
-        this.anims.create({
-            key: 'left',
-            frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'right',
-            frames: this.anims.generateFrameNumbers('player', { start: 5, end: 8 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
+        this.createPlayerAnims();
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.createJoystick();
 
         console.log('进入战斗场景');
     }
-
-    update() {
-        const cursors = this.joystick.createCursorKeys();
-    
-        if (cursors.left.isDown) {
-            this.player.setVelocityX(-160);
-            this.player.anims.play('left', true);
-        } else if (cursors.right.isDown) {
-            this.player.setVelocityX(160);
-            this.player.anims.play('right', true);
-        } else {
-            this.player.setVelocityX(0);
-            this.player.anims.stop();
-        }
-    
-        if (cursors.up.isDown) {
-            this.player.setVelocityY(-160);
-        } else if (cursors.down.isDown) {
-            this.player.setVelocityY(160);
-        } else {
-            this.player.setVelocityY(0);
-        }
-    }    
 
     generateRandomMap(width, height) {
         const map = [];
