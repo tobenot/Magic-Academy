@@ -1,3 +1,5 @@
+// main.js
+
 class MainScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MainScene' });
@@ -64,4 +66,7 @@ const config = {
     parent: 'game-container'
 };
 
-export { config, MainScene, BattleScene };
+function startGame() {
+    const game = new Phaser.Game(config);
+    game.scene.start('MainScene');
+}
