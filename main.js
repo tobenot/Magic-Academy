@@ -9,6 +9,7 @@ class MainScene extends Phaser.Scene {
         const timestamp = new Date().getTime();
         this.load.tilemapTiledJSON('magicAcademy', `assets/town.json?v=${timestamp}`);
         this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
+        this.load.spritesheet('player', `assets/main_menu.jfif?v=${timestamp}`, { frameWidth: 32, frameHeight: 48 });
     }
 
     create() {
@@ -16,7 +17,49 @@ class MainScene extends Phaser.Scene {
         const tileset = map.addTilesetImage('tileset', 'tiles');
         const layer = map.createLayer('Tile Layer 1', tileset, 0, 0);
 
+        this.player = this.physics.add.sprite(100, 100, 'player');
+
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('player', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+        
+        // 碰撞设置
+        this.physics.add.collider(this.player, layer);
+        layer.setCollisionByExclusion([-1]);
+
         console.log('进入魔法学院');
+    }
+
+    update() {
+        if (this.cursors.left.isDown) {
+            this.player.setVelocityX(-160);
+            this.player.anims.play('left', true);
+        } else if (this.cursors.right.isDown) {
+            this.player.setVelocityX(160);
+            this.player.anims.play('right', true);
+        } else {
+            this.player.setVelocityX(0);
+            this.player.anims.stop();
+        }
+        if (this.cursors.up.isDown) {
+            this.player.setVelocityY(-160);
+        } else if (this.cursors.down.isDown) {
+            this.player.setVelocityY(160);
+        } else {
+            this.player.setVelocityY(0);
+        }
     }
 }
 
@@ -28,6 +71,7 @@ class BattleScene extends Phaser.Scene {
     preload() {
         const timestamp = new Date().getTime();
         this.load.image('tiles', `assets/blockPack_tilesheet.png?v=${timestamp}`);
+        this.load.spritesheet('player', `assets/main_menu.jfif?v=${timestamp}`, { frameWidth: 32, frameHeight: 48 });
     }
 
     create() {
@@ -36,7 +80,45 @@ class BattleScene extends Phaser.Scene {
         const tileset = map.addTilesetImage('tileset', null, 32, 32);
         const layer = map.createLayer(0, tileset, 0, 0);
 
+        this.player = this.physics.add.sprite(100, 100, 'player');
+
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('player', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('player', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.cursors = this.input.keyboard.createCursorKeys();
+
         console.log('进入战斗场景');
+    }
+
+    update() {
+        if (this.cursors.left.isDown) {
+            this.player.setVelocityX(-160);
+            this.player.anims.play('left', true);
+        } else if (this.cursors.right.isDown) {
+            this.player.setVelocityX(160);
+            this.player.anims.play('right', true);
+        } else {
+            this.player.setVelocityX(0);
+            this.player.anims.stop();
+        }
+        if (this.cursors.up.isDown) {
+            this.player.setVelocityY(-160);
+        } else if (this.cursors.down.isDown) {
+            this.player.setVelocityY(160);
+        } else {
+            this.player.setVelocityY(0);
+        }
     }
 
     generateRandomMap(width, height) {
@@ -59,7 +141,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 300 }
+            gravity: { y: 0 } // 无重力
         }
     },
     scene: [MainScene, BattleScene],
@@ -68,9 +150,8 @@ const config = {
 
 function startGame() {
     const game = new Phaser.Game(config);
-    
+
     game.scale.resize(window.innerWidth, window.innerHeight);
-    // 监听窗口大小变化事件
     window.addEventListener('resize', () => {
         game.scale.resize(window.innerWidth, window.innerHeight);
     });
@@ -78,5 +159,4 @@ function startGame() {
     game.scene.start('MainScene');
 }
 
-// 将 startGame 挂载到全局对象
 window.startGame = startGame;
