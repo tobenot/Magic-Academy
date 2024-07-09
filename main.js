@@ -68,6 +68,13 @@ const config = {
 
 function startGame() {
     const game = new Phaser.Game(config);
+    
+    game.scale.resize(window.innerWidth, window.innerHeight);
+    // 监听窗口大小变化事件
+    window.addEventListener('resize', () => {
+        game.scale.resize(window.innerWidth, window.innerHeight);
+    });
+
     game.scene.start('MainScene');
 }
 
