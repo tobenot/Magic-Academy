@@ -23,7 +23,8 @@ class BaseScene extends Phaser.Scene {
 
     createJoystick() {
         // 检查是否在移动设备上
-        this.isMobile = Phaser.Device.OS.iOS || Phaser.Device.OS.Android;
+        let deviceOS = this.sys.game.device.os;
+        this.isMobile = deviceOS.iOS || deviceOS.android;
         
         // 如果是在移动设备上，则创建虚拟摇杆
         if (this.isMobile) {
