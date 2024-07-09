@@ -3,33 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>心界与魔法学院</title>
+    <title>Heart World and the Magic Academy</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="rotate-message">
-        <p class="rotate-text">Please rotate your device to landscape mode.</p>
-        <p class="rotate-text" lang="zh">请将您的设备旋转到横屏模式。</p>
+    <div id="game-container" style="display: none;"></div> <!-- 初始隐藏 -->
+    <div id="auth-container">
+        <h1 class="game-title">Heart World and the Magic Academy</h1>
+        <h1 class="game-title" lang="zh">心界与魔法学院</h1>
+        <form id="auth-form" class="auth-form" lang="zh">
+            <input type="text" id="username" placeholder="用户名" required>
+            <input type="password" id="password" placeholder="密码" required>
+            <div class="button-container">
+                <button type="button" id="register-button">注册</button>
+                <button type="button" id="login-button">登录</button>
+            </div>
+        </form>
     </div>
-    <div id="app-container">
-        <div id="game-container" style="display: none;"></div> <!-- 初始隐藏 -->
-        <div id="auth-container">
-            <h1 class="game-title">Heart World and the Magic Academy</h1>
-            <h1 class="game-title" lang="zh">心界与魔法学院</h1>
-            <form id="auth-form" class="auth-form" lang="zh">
-                <input type="text" id="username" placeholder="用户名" required>
-                <input type="password" id="password" placeholder="密码" required>
-                <div class="button-container">
-                    <button type="button" id="register-button">注册</button>
-                    <button type="button" id="login-button">登录</button>
-                </div>
-            </form>
-        </div>
-        <!-- 添加主菜单图像 -->
-        <div id="main-menu" style="text-align: center;">
-            <img src="assets/main_menu.jfif" alt="Main Menu" style="max-width: 100%; height: auto;">
-        </div>
+    <!-- 添加主菜单图像 -->
+    <div id="main-menu" style="text-align: center;">
+        <img src="assets/main_menu.jfif" alt="Main Menu" style="max-width: 100%; height: auto;">
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
     <script type="module">
@@ -45,22 +39,6 @@
         authScript.type = 'module';
         authScript.src = `auth.js?t=${timestamp}`;
         document.body.appendChild(authScript);
-
-        // JavaScript to update DOM on orientation change
-        function handleOrientationChange() {
-            if (window.matchMedia("(orientation: portrait)").matches) {
-                document.getElementById('rotate-message').style.display = 'block';
-                document.getElementById('app-container').style.display = 'none';
-            } else {
-                document.getElementById('rotate-message').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
-            }
-        }
-
-        window.addEventListener('orientationchange', handleOrientationChange);
-
-        // Initial check
-        handleOrientationChange();
     </script>
 </body>
 </html>
