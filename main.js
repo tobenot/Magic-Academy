@@ -70,3 +70,6 @@ function startGame() {
     const game = new Phaser.Game(config);
     game.scene.start('MainScene');
 }
+
+// 将 startGame 挂载到全局对象
+window.startGame = startGame;

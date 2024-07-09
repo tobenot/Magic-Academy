@@ -66,7 +66,11 @@ loginButton.addEventListener('click', async (event) => {
             document.getElementById('game-container').style.display = 'block';
 
             // 初始化和启动 Phaser 游戏
-            startGame();
+            if (typeof window.startGame === 'function') {
+                window.startGame();
+            } else {
+                console.error('startGame 函数未定义');
+            }
         }
     } catch (error) {
         console.error('Error:', error);
