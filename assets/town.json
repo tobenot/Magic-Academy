@@ -43,7 +43,16 @@
     "tilesets": [
         {
             "firstgid": 1,
-            "source": "tileset.json"
+            "columns": 5,
+            "image": "blockPack_tilesheet.png",
+            "imageheight": 1280,
+            "imagewidth": 500,
+            "margin": 0,
+            "name": "tileset",
+            "spacing": 0,
+            "tilecount": 84,
+            "tileheight": 100,
+            "tilewidth": 64
         }
     ],
     "tilewidth": 32,
