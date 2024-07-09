@@ -26,6 +26,19 @@
         <img src="assets/main_menu.jfif" alt="Main Menu" style="max-width: 100%; height: auto;">
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
-    <script type="module" src="auth.js"></script> <!-- 单独引用 auth.js -->
+    <script type="module">
+        // 动态添加时间戳
+        const timestamp = new Date().getTime();
+        
+        const mainScript = document.createElement('script');
+        mainScript.type = 'module';
+        mainScript.src = `main.js?t=${timestamp}`;
+        document.body.appendChild(mainScript);
+
+        const authScript = document.createElement('script');
+        authScript.type = 'module';
+        authScript.src = `auth.js?t=${timestamp}`;
+        document.body.appendChild(authScript);
+    </script>
 </body>
 </html>
