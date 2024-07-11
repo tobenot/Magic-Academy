@@ -248,11 +248,11 @@ function startGame() {
         });
     }
 
-    resizeGame(); // 在开头调用一次
-
     window.addEventListener('resize', resizeGame);
 
     game.scene.start('MainScene');
+
+    resizeGame(); // 在开头调用一次
 }
 
 window.startGame = startGame;
