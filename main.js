@@ -2,7 +2,7 @@ class VirtualJoystick {
     constructor(scene, x, y, radius) {
         this.scene = scene;
         this.radius = radius;
-        this.baseX = x; // 保存初始位置
+        this.baseX = x;
         this.baseY = y;
         this.base = scene.add.circle(x, y, radius, 0x888888).setScrollFactor(0);
         this.thumb = scene.add.circle(x, y, radius / 2, 0xcccccc).setScrollFactor(0);
@@ -62,7 +62,6 @@ class VirtualJoystick {
         };
     }
 
-    // 更新摇杆位置
     updatePosition(width, height) {
         this.base.setPosition(this.baseX, height - this.baseY);
         this.thumb.setPosition(this.base.x, this.base.y);
@@ -100,9 +99,10 @@ class BaseScene extends Phaser.Scene {
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
 
-        // 将摇杆位置设置为左下角
+        // 获取当前场景的高度
+        const sceneHeight = this.cameras.main.height;
         const joystickX = 100; // 适当调整X位置
-        const joystickY = window.innerHeight - 100; // 将Y位置设置为屏幕底部
+        const joystickY = sceneHeight - 100; // 将Y位置设置为场景底部
 
         if (true) {
             this.joystick = new VirtualJoystick(this, joystickX, joystickY, 50);
@@ -224,7 +224,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 0 } // 无重力
+            gravity: { y: 0 }
         }
     },
     scene: [MainScene, BattleScene],
@@ -244,7 +244,6 @@ function startGame() {
                 scene.cameras.main.setSize(width, height);
                 console.log(`Camera size: ${width} x ${height}`);
 
-                // 更新摇杆位置
                 if (scene.joystick) {
                     scene.joystick.updatePosition(width, height);
                 }
@@ -256,7 +255,7 @@ function startGame() {
 
     game.scene.start('MainScene');
 
-    resizeGame(); // 在开头调用一次
+    resizeGame();
 }
 
 window.startGame = startGame;
