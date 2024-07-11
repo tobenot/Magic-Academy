@@ -236,6 +236,8 @@ const config = {
 };
 
 function resizeGame() {
+    const game = new Phaser.Game(config);
+    
     const width = window.innerWidth;
     const height = window.innerHeight;
     game.scale.resize(width, height);
