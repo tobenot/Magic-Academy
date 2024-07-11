@@ -174,6 +174,8 @@ class MainScene extends BaseScene {
         layer.setCollisionByExclusion([-1]);
 
         console.log('进入魔法学院');
+
+        resizeGame();
     }
 }
 
@@ -201,6 +203,8 @@ class BattleScene extends BaseScene {
         this.createCamera();
 
         console.log('进入战斗场景');
+
+        resizeGame();
     }
 
     generateRandomMap(width, height) {
@@ -231,31 +235,29 @@ const config = {
     plugins: {}
 };
 
+function resizeGame() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    game.scale.resize(width, height);
+    game.scene.scenes.forEach(scene => {
+        if (scene.cameras) {
+            scene.cameras.main.setSize(width, height);
+            console.log(`Camera size: ${width} x ${height}`);
+
+            // 更新摇杆位置
+            if (scene.joystick) {
+                scene.joystick.updatePosition(width, height);
+            }
+        }
+    });
+}
+
 function startGame() {
     const game = new Phaser.Game(config);
-
-    function resizeGame() {
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        game.scale.resize(width, height);
-        game.scene.scenes.forEach(scene => {
-            if (scene.cameras) {
-                scene.cameras.main.setSize(width, height);
-                console.log(`Camera size: ${width} x ${height}`);
-
-                // 更新摇杆位置
-                if (scene.joystick) {
-                    scene.joystick.updatePosition(width, height);
-                }
-            }
-        });
-    }
 
     window.addEventListener('resize', resizeGame);
 
     game.scene.start('MainScene');
-
-    resizeGame(); // 在开头调用一次
 }
 
 window.startGame = startGame;
