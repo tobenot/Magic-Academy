@@ -49,9 +49,9 @@
             "imagewidth": 500,
             "margin": 0,
             "name": "tileset",
-            "spacing": 0,
+            "spacing": 26,
             "tilecount": 84,
-            "tileheight": 100,
+            "tileheight": 74,
             "tilewidth": 64
         }
     ],
