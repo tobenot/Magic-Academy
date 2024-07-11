@@ -231,8 +231,7 @@ const config = {
 function startGame() {
     const game = new Phaser.Game(config);
 
-    game.scale.resize(window.innerWidth, window.innerHeight);
-    window.addEventListener('resize', () => {
+    function resizeGame() {
         const width = window.innerWidth;
         const height = window.innerHeight;
         game.scale.resize(width, height);
@@ -247,7 +246,11 @@ function startGame() {
                 }
             }
         });
-    });
+    }
+
+    resizeGame(); // 在开头调用一次
+
+    window.addEventListener('resize', resizeGame);
 
     game.scene.start('MainScene');
 }
