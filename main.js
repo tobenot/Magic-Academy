@@ -25,13 +25,14 @@ class BaseScene extends Phaser.Scene {
         // 检查是否在移动设备上
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
-
+    
         // 尝试打印插件
-        console.log('rexVirtualJoystick plugin:', this.plugins.get('rexVirtualJoystick'));
-
+        const joystickPlugin = this.plugins.get('rexVirtualJoystick');
+        console.log('rexVirtualJoystick plugin:', joystickPlugin);
+    
         // 如果是在移动设备上，则创建虚拟摇杆
-        if (this.isMobile) {
-            this.joystick = this.plugins.get('rexVirtualJoystick').add(this, {
+        if (true) {//this.isMobile && joystickPlugin) {
+            this.joystick = joystickPlugin.add(this, {
                 x: 100,
                 y: this.cameras.main.height - 100,
                 radius: 50,
@@ -158,11 +159,14 @@ const config = {
             {
                 key: 'rexVirtualJoystick',
                 plugin: rexvirtualjoystickplugin,
-                mapping: 'rexVirtualJoystick'
+                mapping: 'rexVirtualJoystick',
+                start: true // 确保插件在场景启动时加载
             }
         ]
     }
 };
+
+console.log('rexVirtualJoystick plugin loaded:', rexvirtualjoystickplugin);
 
 function startGame() {
     const game = new Phaser.Game(config);
