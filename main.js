@@ -100,8 +100,12 @@ class BaseScene extends Phaser.Scene {
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
 
+        // 将摇杆位置设置为左下角
+        const joystickX = 100; // 适当调整X位置
+        const joystickY = window.innerHeight - 100; // 将Y位置设置为屏幕底部
+
         if (true) {
-            this.joystick = new VirtualJoystick(this, 100, 100, 50);
+            this.joystick = new VirtualJoystick(this, joystickX, joystickY, 50);
         }
 
         // Create keyboard inputs for WASD
