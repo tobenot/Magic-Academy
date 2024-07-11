@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://magic-academy-backend.vercel.app';
+const API_BASE_URL = 'https://magic.tobenot.top';
 
 // 获取表单和按钮元素
 const authForm = document.getElementById('auth-form');
