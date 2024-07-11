@@ -2,6 +2,8 @@ class VirtualJoystick {
     constructor(scene, x, y, radius) {
         this.scene = scene;
         this.radius = radius;
+        this.baseX = x; // 保存初始位置
+        this.baseY = y;
         this.base = scene.add.circle(x, y, radius, 0x888888).setScrollFactor(0);
         this.thumb = scene.add.circle(x, y, radius / 2, 0xcccccc).setScrollFactor(0);
         this.pointer = null;
@@ -59,6 +61,12 @@ class VirtualJoystick {
             down: { isDown: this.value.y > 0.5 }
         };
     }
+
+    // 更新摇杆位置
+    updatePosition(width, height) {
+        this.base.setPosition(this.baseX, height - this.baseY);
+        this.thumb.setPosition(this.base.x, this.base.y);
+    }
 }
 
 class BaseScene extends Phaser.Scene {
@@ -93,7 +101,7 @@ class BaseScene extends Phaser.Scene {
         this.isMobile = deviceOS.iOS || deviceOS.android;
 
         if (true) {
-            this.joystick = new VirtualJoystick(this, 100, this.cameras.main.height - 100, 50);
+            this.joystick = new VirtualJoystick(this, 100, 100, 50);
         }
 
         // Create keyboard inputs for WASD
@@ -225,10 +233,18 @@ function startGame() {
 
     game.scale.resize(window.innerWidth, window.innerHeight);
     window.addEventListener('resize', () => {
-        game.scale.resize(window.innerWidth, window.innerHeight);
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        game.scale.resize(width, height);
         game.scene.scenes.forEach(scene => {
             if (scene.cameras) {
-                scene.cameras.main.setSize(window.innerWidth, window.innerHeight);
+                scene.cameras.main.setSize(width, height);
+                console.log(`Camera size: ${width} x ${height}`);
+
+                // 更新摇杆位置
+                if (scene.joystick) {
+                    scene.joystick.updatePosition(width, height);
+                }
             }
         });
     });
