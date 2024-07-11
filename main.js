@@ -68,6 +68,10 @@ class BaseScene extends Phaser.Scene {
         this.load.spritesheet('player', `assets/main_menu.jfif?v=${timestamp}`, { frameWidth: 32, frameHeight: 48 });
     }
 
+    createCamera() {
+        this.cameras.main.setSize(window.innerWidth, window.innerHeight);
+    }
+
     createPlayerAnims() {
         this.anims.create({
             key: 'left',
@@ -75,7 +79,7 @@ class BaseScene extends Phaser.Scene {
             frameRate: 10,
             repeat: -1
         });
-   
+
         this.anims.create({
             key: 'right',
             frames: this.anims.generateFrameNumbers('player', { start: 5, end: 8 }),
@@ -83,15 +87,15 @@ class BaseScene extends Phaser.Scene {
             repeat: -1
         });
     }
-   
+
     createJoystick() {
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
-   
-        if (true){ // this.isMobile
+
+        if (true) {
             this.joystick = new VirtualJoystick(this, 100, this.cameras.main.height - 100, 50);
         }
-   
+
         // Create keyboard inputs for WASD
         this.wasdKeys = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -100,11 +104,11 @@ class BaseScene extends Phaser.Scene {
             right: Phaser.Input.Keyboard.KeyCodes.D
         });
     }
-   
+
     updatePlayerMovement() {
         const cursors = this.joystick ? this.joystick.createCursorKeys() : this.cursors;
         const wasd = this.wasdKeys || {};
-   
+
         if (cursors.left.isDown || wasd.left.isDown) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
@@ -115,7 +119,7 @@ class BaseScene extends Phaser.Scene {
             this.player.setVelocityX(0);
             this.player.anims.stop();
         }
-   
+
         if (cursors.up.isDown || wasd.up.isDown) {
             this.player.setVelocityY(-160);
         } else if (cursors.down.isDown || wasd.down.isDown) {
@@ -123,7 +127,7 @@ class BaseScene extends Phaser.Scene {
         } else {
             this.player.setVelocityY(0);
         }
-    }   
+    }
 
     update() {
         this.updatePlayerMovement();
@@ -134,7 +138,7 @@ class MainScene extends BaseScene {
     constructor() {
         super({ key: 'MainScene' });
     }
-    
+
     preload() {
         const timestamp = new Date().getTime();
         this.load.tilemapTiledJSON('magicAcademy', `assets/town.json?v=${timestamp}`);
@@ -152,6 +156,7 @@ class MainScene extends BaseScene {
         this.createPlayerAnims();
         this.cursors = this.input.keyboard.createCursorKeys();
         this.createJoystick();
+        this.createCamera();
 
         // 碰撞设置
         this.physics.add.collider(this.player, layer);
@@ -182,6 +187,7 @@ class BattleScene extends BaseScene {
         this.createPlayerAnims();
         this.cursors = this.input.keyboard.createCursorKeys();
         this.createJoystick();
+        this.createCamera();
 
         console.log('进入战斗场景');
     }
@@ -220,6 +226,11 @@ function startGame() {
     game.scale.resize(window.innerWidth, window.innerHeight);
     window.addEventListener('resize', () => {
         game.scale.resize(window.innerWidth, window.innerHeight);
+        game.scene.scenes.forEach(scene => {
+            if (scene.cameras) {
+                scene.cameras.main.setSize(window.innerWidth, window.innerHeight);
+            }
+        });
     });
 
     game.scene.start('MainScene');
