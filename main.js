@@ -75,7 +75,7 @@ class BaseScene extends Phaser.Scene {
             frameRate: 10,
             repeat: -1
         });
-
+   
         this.anims.create({
             key: 'right',
             frames: this.anims.generateFrameNumbers('player', { start: 5, end: 8 }),
@@ -83,40 +83,47 @@ class BaseScene extends Phaser.Scene {
             repeat: -1
         });
     }
-
+   
     createJoystick() {
-        // 检查是否在移动设备上
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
-
-        // 如果是在移动设备上，则创建虚拟摇杆
-        if (true){//this.isMobile) {
+   
+        if (true){ // this.isMobile
             this.joystick = new VirtualJoystick(this, 100, this.cameras.main.height - 100, 50);
         }
+   
+        // Create keyboard inputs for WASD
+        this.wasdKeys = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
     }
-
+   
     updatePlayerMovement() {
         const cursors = this.joystick ? this.joystick.createCursorKeys() : this.cursors;
-
-        if (cursors.left.isDown) {
+        const wasd = this.wasdKeys || {};
+   
+        if (cursors.left.isDown || wasd.left.isDown) {
             this.player.setVelocityX(-160);
             this.player.anims.play('left', true);
-        } else if (cursors.right.isDown) {
+        } else if (cursors.right.isDown || wasd.right.isDown) {
             this.player.setVelocityX(160);
             this.player.anims.play('right', true);
         } else {
             this.player.setVelocityX(0);
             this.player.anims.stop();
         }
-
-        if (cursors.up.isDown) {
+   
+        if (cursors.up.isDown || wasd.up.isDown) {
             this.player.setVelocityY(-160);
-        } else if (cursors.down.isDown) {
+        } else if (cursors.down.isDown || wasd.down.isDown) {
             this.player.setVelocityY(160);
         } else {
             this.player.setVelocityY(0);
         }
-    }
+    }   
 
     update() {
         this.updatePlayerMovement();
