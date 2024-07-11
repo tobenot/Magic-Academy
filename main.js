@@ -1,3 +1,66 @@
+class VirtualJoystick {
+    constructor(scene, x, y, radius) {
+        this.scene = scene;
+        this.radius = radius;
+        this.base = scene.add.circle(x, y, radius, 0x888888).setScrollFactor(0);
+        this.thumb = scene.add.circle(x, y, radius / 2, 0xcccccc).setScrollFactor(0);
+        this.pointer = null;
+        this.value = { x: 0, y: 0 };
+
+        this.base.setInteractive();
+        this.base.on('pointerdown', this.onPointerDown, this);
+        scene.input.on('pointerup', this.onPointerUp, this);
+        scene.input.on('pointermove', this.onPointerMove, this);
+    }
+
+    onPointerDown(pointer) {
+        this.pointer = pointer;
+        this.updateThumb(pointer);
+    }
+
+    onPointerUp() {
+        this.pointer = null;
+        this.thumb.setPosition(this.base.x, this.base.y);
+        this.value = { x: 0, y: 0 };
+    }
+
+    onPointerMove(pointer) {
+        if (this.pointer && this.pointer.id === pointer.id) {
+            this.updateThumb(pointer);
+        }
+    }
+
+    updateThumb(pointer) {
+        const dx = pointer.x - this.base.x;
+        const dy = pointer.y - this.base.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+
+        if (distance > this.radius) {
+            this.thumb.setPosition(
+                this.base.x + Math.cos(angle) * this.radius,
+                this.base.y + Math.sin(angle) * this.radius
+            );
+        } else {
+            this.thumb.setPosition(pointer.x, pointer.y);
+        }
+
+        this.value = {
+            x: Math.cos(angle) * Math.min(distance / this.radius, 1),
+            y: Math.sin(angle) * Math.min(distance / this.radius, 1)
+        };
+    }
+
+    createCursorKeys() {
+        return {
+            left: { isDown: this.value.x < -0.5 },
+            right: { isDown: this.value.x > 0.5 },
+            up: { isDown: this.value.y < -0.5 },
+            down: { isDown: this.value.y > 0.5 }
+        };
+    }
+}
+
 class BaseScene extends Phaser.Scene {
     preloadAssets() {
         const timestamp = new Date().getTime();
@@ -25,23 +88,10 @@ class BaseScene extends Phaser.Scene {
         // 检查是否在移动设备上
         let deviceOS = this.sys.game.device.os;
         this.isMobile = deviceOS.iOS || deviceOS.android;
-    
-        // 尝试打印插件
-        const joystickPlugin = this.plugins.get('rexVirtualJoystick');
-        console.log('rexVirtualJoystick plugin:', joystickPlugin);
-    
+
         // 如果是在移动设备上，则创建虚拟摇杆
-        if (true) {//this.isMobile && joystickPlugin) {
-            this.joystick = joystickPlugin.add(this, {
-                x: 100,
-                y: this.cameras.main.height - 100,
-                radius: 50,
-                base: this.add.circle(0, 0, 50, 0x888888),
-                thumb: this.add.circle(0, 0, 25, 0xcccccc),
-                dir: '8dir',
-                forceMin: 16,
-                fixed: true
-            });
+        if (true){//this.isMobile) {
+            this.joystick = new VirtualJoystick(this, 100, this.cameras.main.height - 100, 50);
         }
     }
 
@@ -154,19 +204,8 @@ const config = {
     },
     scene: [MainScene, BattleScene],
     parent: 'game-container',
-    plugins: {
-        scene: [
-            {
-                key: 'rexVirtualJoystick',
-                plugin: rexvirtualjoystickplugin,
-                mapping: 'rexVirtualJoystick',
-                start: true // 确保插件在场景启动时加载
-            }
-        ]
-    }
+    plugins: {}
 };
-
-console.log('rexVirtualJoystick plugin loaded:', rexvirtualjoystickplugin);
 
 function startGame() {
     const game = new Phaser.Game(config);
