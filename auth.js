@@ -1,4 +1,10 @@
-const API_BASE_URL = 'https://magic.tobenot.top';
+// 通过检查当前URL来判断是否为本地开发环境
+const isDevelopment = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+
+const API_BASE_URL = process.env.VITE_API_URL ? process.env.VITE_API_URL.replace(/['"]/g, '') : '';
+console.log('Initial API_BASE_URL:', API_BASE_URL);
+console.log('Type of API_BASE_URL:', typeof API_BASE_URL);
 
 // 获取表单和按钮元素
 const authForm = document.getElementById('auth-form');
@@ -11,8 +17,16 @@ registerButton.addEventListener('click', async (event) => {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
+    const requestUrl = API_BASE_URL + '/register';
+    console.log('构建的请求URL:', requestUrl);
+    console.log('URL组成部分:', {
+        base: API_BASE_URL,
+        endpoint: '/register',
+        final: requestUrl
+    });
+
     try {
-        const response = await fetch(`${API_BASE_URL}/register`, {
+        const response = await fetch(requestUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -41,7 +55,7 @@ loginButton.addEventListener('click', async (event) => {
     const password = document.getElementById('password').value;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
+        const response = await fetch(API_BASE_URL + '/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
