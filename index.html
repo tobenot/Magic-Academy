@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>心界与魔法学院</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
     <div id="game-container" style="display: none;"></div> <!-- 初始隐藏 -->
@@ -22,27 +23,10 @@
     </div>
     <!-- 添加主菜单图像 -->
     <div id="main-menu" style="text-align: center;">
-        <img src="assets/main_menu.jfif" alt="Main Menu" style="height: 100vh; width: auto; object-fit: cover;">
+        <img src="/assets/main_menu.jfif" alt="Main Menu" style="height: 100vh; width: auto; object-fit: cover;">
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.55.2/phaser.min.js"></script>
-    <script type="module">
-        // 动态添加时间戳
-        const timestamp = new Date().getTime();
-
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = `style.css?v=${timestamp}`;
-        document.head.appendChild(link);
-
-        const mainScript = document.createElement('script');
-        mainScript.type = 'module';
-        mainScript.src = `main.js?t=${timestamp}`;
-        document.body.appendChild(mainScript);
-
-        const authScript = document.createElement('script');
-        authScript.type = 'module';
-        authScript.src = `auth.js?t=${timestamp}`;
-        document.body.appendChild(authScript);
-    </script>
+    <script type="module" src="/src/main.ts"></script>
+    <script type="module" src="/src/auth.ts"></script>
 </body>
 </html>

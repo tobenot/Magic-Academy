@@ -87,3 +87,73 @@ body[lang="zh"],
         max-width: 400px;
     }
 }
+
+/* 聊天室样式 */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+}
+
+.message {
+    margin: 8px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.message .username {
+    color: #FFD700;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.message .content {
+    color: #fff;
+}
+
+.message .time {
+    color: #888;
+    font-size: 0.8em;
+    margin-left: 10px;
+}
+
+.chat-input {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.chat-input button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    background: #FFD700;
+    color: #000;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chat-input button:hover {
+    background: #DAA520;
+}
