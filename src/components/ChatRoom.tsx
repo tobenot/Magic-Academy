@@ -1,4 +1,10 @@
-import { useState, ChangeEvent, KeyboardEvent, useEffect } from "react";
+import {
+  useState,
+  ChangeEvent,
+  KeyboardEvent,
+  useEffect,
+  useCallback,
+} from "react";
 import { WebSocketService } from "../services/WebSocketService";
 import { AuthService } from "../services/AuthService";
 
@@ -6,7 +12,8 @@ interface Message {
   username: string;
   content: string;
   timestamp: number;
-  type: "chat" | "system";
+  type: "chat" | "system" | "history";
+  messages?: Message[];
 }
 
 const ChatRoom = (): JSX.Element => {
@@ -17,71 +24,104 @@ const ChatRoom = (): JSX.Element => {
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
   const authService = new AuthService();
 
+  // 使用 useCallback 包装消息处理函数
+  const handleMessage = useCallback((message: Message) => {
+    console.log("[ChatRoom] 开始处理消息:", message);
+    if (message.type === "history") {
+      setMessages(message.messages || []);
+    } else {
+      setMessages((prev) => {
+        console.log("[ChatRoom] 当前消息列表长度:", prev.length);
+        return [...prev, message];
+      });
+    }
+    console.log("[ChatRoom] 消息处理完成");
+  }, []);
+
+  const handleConnected = useCallback(() => {
+    console.log("WebSocket 已连接");
+    setConnected(true);
+  }, []);
+
+  const handleDisconnect = useCallback(() => {
+    console.log("WebSocket 已断开");
+    setConnected(false);
+  }, []);
+
+  const handleError = useCallback((error: any) => {
+    console.error("WebSocket 错误:", error);
+  }, []);
+
+  // 处理消息发送
+  const sendMessage = useCallback((): void => {
+    if (!inputMessage.trim()) return;
+    wsService?.sendMessage(inputMessage.trim());
+    setInputMessage("");
+  }, [inputMessage, wsService]);
+
+  const handleInputChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>): void => {
+      setInputMessage(e.target.value);
+    },
+    [],
+  );
+
+  const handleKeyPress = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>): void => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    },
+    [sendMessage],
+  );
+
+  // WebSocket 连接和事件处理
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
         if (user) {
           setUsername(user.username);
-          const ws = new WebSocketService(user.username);
+          console.log("[ChatRoom] 获取 WebSocket 实例，用户:", user.username);
+          const ws = WebSocketService.getInstance(user.username);
           setWsService(ws);
+
+          console.log("[ChatRoom] 准备添加消息监听器");
+          ws.off("message", handleMessage);
+          console.log("[ChatRoom] 已移除旧的消息监听器");
+          ws.on("message", handleMessage);
+          console.log("[ChatRoom] 已添加新的消息监听器");
+
+          ws.on("connected", handleConnected);
+          ws.on("disconnect", handleDisconnect);
+          ws.on("error", handleError);
+
           ws.connect();
 
-          ws.on("message", (message: Message) => {
-            setMessages((prev) => [...prev, message]);
-          });
-
-          ws.on("connected", () => {
-            setConnected(true);
-          });
-
-          ws.on("disconnect", () => {
-            setConnected(false);
-          });
-
-          ws.on("error", (error) => {
-            console.error("WebSocket error:", error);
-          });
-        } else {
-          //window.location.href = "/login";
+          return () => {
+            console.log("[ChatRoom] 开始清理事件监听器");
+            ws.off("message", handleMessage);
+            ws.off("connected", handleConnected);
+            ws.off("disconnect", handleDisconnect);
+            ws.off("error", handleError);
+            console.log("[ChatRoom] 清理事件监听器完成");
+          };
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        //window.location.href = "/login";
       }
     };
 
     checkAuth();
+  }, [handleMessage, handleConnected, handleDisconnect, handleError]);
 
-    return () => {
-      wsService?.disconnect();
-    };
-  }, []);
-
+  // 更新页面标题
   useEffect(() => {
     document.title = `魔法学院 - ${username || "未登录"}`;
-
     return () => {
       document.title = "魔法学院";
     };
   }, [username]);
-
-  const sendMessage = (): void => {
-    if (!inputMessage.trim()) return;
-
-    wsService?.sendMessage(inputMessage.trim());
-    setInputMessage("");
-  };
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputMessage(e.target.value);
-  };
-
-  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>): void => {
-    if (e.key === "Enter") {
-      sendMessage();
-    }
-  };
 
   return (
     <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
