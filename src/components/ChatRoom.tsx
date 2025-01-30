@@ -26,16 +26,11 @@ const ChatRoom = (): JSX.Element => {
 
   // 使用 useCallback 包装消息处理函数
   const handleMessage = useCallback((message: Message) => {
-    console.log("[ChatRoom] 开始处理消息:", message);
     if (message.type === "history") {
       setMessages(message.messages || []);
     } else {
-      setMessages((prev) => {
-        console.log("[ChatRoom] 当前消息列表长度:", prev.length);
-        return [...prev, message];
-      });
+      setMessages((prev) => [...prev, message]);
     }
-    console.log("[ChatRoom] 消息处理完成");
   }, []);
 
   const handleConnected = useCallback(() => {
@@ -82,16 +77,11 @@ const ChatRoom = (): JSX.Element => {
         const user = await authService.getCurrentUser();
         if (user) {
           setUsername(user.username);
-          console.log("[ChatRoom] 获取 WebSocket 实例，用户:", user.username);
           const ws = WebSocketService.getInstance(user.username);
           setWsService(ws);
 
-          console.log("[ChatRoom] 准备添加消息监听器");
           ws.off("message", handleMessage);
-          console.log("[ChatRoom] 已移除旧的消息监听器");
           ws.on("message", handleMessage);
-          console.log("[ChatRoom] 已添加新的消息监听器");
-
           ws.on("connected", handleConnected);
           ws.on("disconnect", handleDisconnect);
           ws.on("error", handleError);
@@ -99,12 +89,10 @@ const ChatRoom = (): JSX.Element => {
           ws.connect();
 
           return () => {
-            console.log("[ChatRoom] 开始清理事件监听器");
             ws.off("message", handleMessage);
             ws.off("connected", handleConnected);
             ws.off("disconnect", handleDisconnect);
             ws.off("error", handleError);
-            console.log("[ChatRoom] 清理事件监听器完成");
           };
         }
       } catch (error) {
