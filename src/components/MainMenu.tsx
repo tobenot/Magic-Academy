@@ -1,8 +1,12 @@
+import AssetLoader from "../utils/AssetLoader";
+
 const MainMenu = (): JSX.Element => {
+  const imagePath = AssetLoader.getInstance().getImagePath("main_menu.jfif");
+
   return (
     <div className="fixed inset-0 z-[-1]">
       <img
-        src="/assets/main_menu.jfif"
+        src={imagePath}
         alt="Main Menu"
         className="h-screen w-full object-cover"
       />

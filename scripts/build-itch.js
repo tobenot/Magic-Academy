@@ -13,6 +13,29 @@ const __dirname = dirname(__filename);
 
 const VERSION_FILE = path.join(__dirname, "../src/assets/config/version.json");
 
+// 添加资源处理函数
+async function copyAssets() {
+  const publicDir = path.join(__dirname, "../public");
+  const distDir = path.join(__dirname, "../dist");
+  const assetsDir = path.join(distDir, "assets");
+
+  try {
+    // 确保目标目录存在
+    await fs.mkdir(assetsDir, { recursive: true });
+
+    // 复制资源文件
+    await fs.cp(path.join(publicDir, "assets"), assetsDir, {
+      recursive: true,
+      force: true,
+    });
+
+    console.log("资源文件复制完成");
+  } catch (error) {
+    console.error("复制资源文件失败:", error);
+    throw error;
+  }
+}
+
 async function updateVersion() {
   let version = { version: "0.0.0" };
 
@@ -67,11 +90,13 @@ async function buildForItch() {
     process.env.VITE_DEPLOY_TARGET = "itch";
     process.env.VITE_VERSION = version;
     process.env.NODE_ENV = "production";
+    process.env.PUBLIC_URL = "./";
 
     console.log("环境变量:");
     console.log("VITE_DEPLOY_TARGET:", process.env.VITE_DEPLOY_TARGET);
     console.log("VITE_VERSION:", process.env.VITE_VERSION);
     console.log("NODE_ENV:", process.env.NODE_ENV);
+    console.log("PUBLIC_URL:", process.env.PUBLIC_URL);
 
     // 清理 dist 目录
     try {
@@ -85,6 +110,9 @@ async function buildForItch() {
     await execAsync("npm run build", {
       env: { ...process.env },
     });
+
+    console.log("复制资源文件...");
+    await copyAssets();
 
     // 创建 ZIP 文件
     console.log("创建 ZIP 压缩包...");
