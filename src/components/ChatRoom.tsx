@@ -77,7 +77,7 @@ const ChatRoom = (): JSX.Element => {
         const user = await authService.getCurrentUser();
         if (user) {
           setUsername(user.username);
-          const ws = WebSocketService.getInstance(user.username);
+          const ws = WebSocketService.getInstance();
           setWsService(ws);
 
           ws.off("message", handleMessage);

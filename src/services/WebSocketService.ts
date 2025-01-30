@@ -3,22 +3,20 @@ import { EventEmitter } from "./EventEmitter";
 export class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
   private readonly baseUrl: string;
-  private username: string;
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 3;
   private static instance: WebSocketService | null = null;
   private isConnecting = false; // 添加连接状态标记
 
-  private constructor(username: string) {
+  private constructor() {
     super();
     this.baseUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws");
-    this.username = username;
   }
 
   // 单例模式获取实例
-  public static getInstance(username: string): WebSocketService {
+  public static getInstance(): WebSocketService {
     if (!WebSocketService.instance) {
-      WebSocketService.instance = new WebSocketService(username);
+      WebSocketService.instance = new WebSocketService();
     }
     return WebSocketService.instance;
   }
@@ -128,7 +126,7 @@ export class WebSocketService extends EventEmitter {
   }
 
   // 添加移除所有监听器的方法
-  private removeAllListeners(): void {
+  public removeAllListeners(): void {
     this.events = {};
   }
 }

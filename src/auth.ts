@@ -12,7 +12,7 @@ interface UserCredentials {
 // 环境变量类型声明
 declare global {
   interface ImportMetaEnv {
-    VITE_API_URL: string;
+    readonly VITE_API_URL: string;
   }
 }
 
@@ -20,7 +20,7 @@ class AuthService {
   private readonly apiBaseUrl: string;
 
   constructor() {
-    this.apiBaseUrl = import.meta.env.VITE_API_URL?.replace(/['"]/g, "") ?? "";
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || "";
     console.log("Initial API_BASE_URL:", this.apiBaseUrl);
   }
 
