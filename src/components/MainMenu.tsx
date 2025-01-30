@@ -1,7 +1,8 @@
 import AssetLoader from "../utils/AssetLoader";
 
 const MainMenu = (): JSX.Element => {
-  const imagePath = AssetLoader.getInstance().getImagePath("main_menu.jfif");
+  const imagePath =
+    AssetLoader.getInstance().getSceneImagePath("main_menu.jfif");
 
   return (
     <div className="fixed inset-0 z-[-1]">
