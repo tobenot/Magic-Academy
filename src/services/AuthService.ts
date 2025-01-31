@@ -13,14 +13,14 @@ export class AuthService {
   private readonly apiBaseUrl: string;
 
   constructor() {
-    this.apiBaseUrl = import.meta.env.VITE_API_URL?.replace(/['"]/g, "") ?? "";
+    this.apiBaseUrl = import.meta.env.VITE_API_URL ?? "";
   }
 
   private async makeRequest(
     endpoint: string,
     credentials: UserCredentials,
   ): Promise<LoginResponse> {
-    const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
+    const response = await fetch(`${this.apiBaseUrl}/auth${endpoint}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -35,7 +35,6 @@ export class AuthService {
     const data = await response.json();
 
     if (data.token) {
-      // 保存登录信息到 localStorage
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
     }
@@ -77,5 +76,22 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
+  }
+
+  async getUserList(): Promise<Array<{ username: string }>> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("未登录");
+
+    const response = await fetch(`${this.apiBaseUrl}/user/list`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("获取用户列表失败");
+    }
+
+    return response.json();
   }
 }

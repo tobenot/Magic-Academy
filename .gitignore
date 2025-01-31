@@ -1,4 +1,6 @@
 note.md
+.env.development
+.env.production
 
 # Logs
 logs
