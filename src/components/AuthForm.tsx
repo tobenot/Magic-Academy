@@ -26,7 +26,11 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
   // 直接使用导入的版本号
   const version = versionJson.version;
 
-  const handleSubmit = async (type: "login" | "register"): Promise<void> => {
+  const handleSubmit = async (
+    type: "login" | "register",
+    e: React.FormEvent,
+  ): Promise<void> => {
+    e.preventDefault(); // 阻止表单默认提交
     try {
       const authService = new AuthService();
       const response = await authService[type](credentials);
@@ -61,10 +65,18 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
           万象魔法学院
         </h1>
 
-        <form className="space-y-4">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => handleSubmit("login", e)}
+          id="loginForm"
+          method="post"
+          autoComplete="on"
+        >
           <div className="space-y-1">
             <input
               type="text"
+              name="username"
+              autoComplete="username"
               placeholder="用户名"
               className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
               value={credentials.username}
@@ -91,6 +103,8 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
           <div className="space-y-1">
             <input
               type="password"
+              name="password"
+              autoComplete="current-password"
               placeholder="密码"
               className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
               value={credentials.password}
@@ -122,14 +136,13 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
           <div className="flex justify-between gap-4">
             <button
               type="button"
-              onClick={() => handleSubmit("register")}
+              onClick={(e) => handleSubmit("register", e)}
               className="flex-1 py-2 px-4 bg-primary hover:bg-secondary text-black rounded transition"
             >
               注册
             </button>
             <button
-              type="button"
-              onClick={() => handleSubmit("login")}
+              type="submit"
               className="flex-1 py-2 px-4 bg-primary hover:bg-secondary text-black rounded transition"
             >
               登录
