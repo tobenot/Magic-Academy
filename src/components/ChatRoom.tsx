@@ -7,6 +7,11 @@ import {
 } from "react";
 import { WebSocketService } from "../services/WebSocketService";
 import { AuthService } from "../services/AuthService";
+import {
+  UserOnlineEvent,
+  UserOfflineEvent,
+  UserListUpdateEvent,
+} from "../types/websocket";
 
 interface Message {
   username: string;
@@ -16,6 +21,11 @@ interface Message {
   messages?: Message[];
 }
 
+interface OnlineUser {
+  id: number;
+  username: string;
+}
+
 const ChatRoom = (): JSX.Element => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -23,6 +33,7 @@ const ChatRoom = (): JSX.Element => {
   const [username, setUsername] = useState<string>("");
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
   const authService = new AuthService();
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
 
   // 使用 useCallback 包装消息处理函数
   const handleMessage = useCallback((message: Message) => {
@@ -70,6 +81,16 @@ const ChatRoom = (): JSX.Element => {
     [sendMessage],
   );
 
+  // 将 fetchOnlineUsers 的声明移到最前面
+  const fetchOnlineUsers = useCallback(async () => {
+    try {
+      const users = await authService.getOnlineUsers();
+      setOnlineUsers(users);
+    } catch (error) {
+      console.error("获取在线用户列表失败:", error);
+    }
+  }, []);
+
   // WebSocket 连接和事件处理
   useEffect(() => {
     const checkAuth = async () => {
@@ -87,11 +108,28 @@ const ChatRoom = (): JSX.Element => {
           const ws = WebSocketService.getInstance();
           setWsService(ws);
 
+          // 清理旧的事件监听
           ws.off("message", handleMessage);
+          ws.off("connected", handleConnected);
+          ws.off("disconnect", handleDisconnect);
+          ws.off("error", handleError);
+
+          // 添加新的事件监听
           ws.on("message", handleMessage);
           ws.on("connected", handleConnected);
           ws.on("disconnect", handleDisconnect);
           ws.on("error", handleError);
+
+          // 添加用户状态事件监听
+          ws.on("user_online", handleUserOnline);
+          ws.on("user_offline", handleUserOffline);
+          ws.on("user_list_update", handleUserListUpdate);
+
+          // 添加请求在线用户列表的处理
+          ws.on("request_online_users", () => {
+            console.log("[WebSocket] 连接成功,获取在线用户列表");
+            fetchOnlineUsers();
+          });
 
           ws.connect();
 
@@ -100,6 +138,10 @@ const ChatRoom = (): JSX.Element => {
             ws.off("connected", handleConnected);
             ws.off("disconnect", handleDisconnect);
             ws.off("error", handleError);
+            ws.off("user_online", handleUserOnline);
+            ws.off("user_offline", handleUserOffline);
+            ws.off("user_list_update", handleUserListUpdate);
+            ws.off("request_online_users", fetchOnlineUsers);
           };
         } else {
           console.error("Invalid user data:", user);
@@ -112,7 +154,13 @@ const ChatRoom = (): JSX.Element => {
     };
 
     checkAuth();
-  }, [handleMessage, handleConnected, handleDisconnect, handleError]);
+  }, [
+    handleMessage,
+    handleConnected,
+    handleDisconnect,
+    handleError,
+    fetchOnlineUsers,
+  ]);
 
   // 更新页面标题
   useEffect(() => {
@@ -122,6 +170,40 @@ const ChatRoom = (): JSX.Element => {
     };
   }, [username]);
 
+  // 修改获取在线用户列表的函数
+  useEffect(() => {
+    fetchOnlineUsers();
+    // 减少轮询间隔到 10 秒,因为这是实时在线用户
+    const interval = setInterval(fetchOnlineUsers, 10000);
+
+    return () => clearInterval(interval);
+  }, [fetchOnlineUsers]);
+
+  // 添加用户状态事件处理函数
+  const handleUserOnline = useCallback((event: UserOnlineEvent) => {
+    setOnlineUsers((prev) => {
+      const exists = prev.some((user) => user.id === event.data.id);
+      if (!exists) {
+        return [
+          ...prev,
+          {
+            id: event.data.id,
+            username: event.data.username,
+          },
+        ];
+      }
+      return prev;
+    });
+  }, []);
+
+  const handleUserOffline = useCallback((event: UserOfflineEvent) => {
+    setOnlineUsers((prev) => prev.filter((user) => user.id !== event.data.id));
+  }, []);
+
+  const handleUserListUpdate = useCallback((event: UserListUpdateEvent) => {
+    setOnlineUsers(event.data.users);
+  }, []);
+
   return (
     <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
       {!connected && (
@@ -130,48 +212,70 @@ const ChatRoom = (): JSX.Element => {
         </div>
       )}
 
-      {username && (
-        <div className="text-white text-sm mb-2">当前用户：{username}</div>
-      )}
-
-      <div className="chat-messages flex-1 overflow-y-auto mb-5 p-3 bg-white/10 rounded-lg">
-        {messages.map((msg: Message, index: number) => (
-          <div
-            key={index}
-            className={`message m-2 p-2 rounded ${
-              msg.type === "system"
-                ? "bg-gray-700/50 text-gray-300"
-                : "bg-white/5"
-            }`}
-          >
-            <span className="username text-primary font-bold mr-2">
-              {msg.username}
-            </span>
-            <span className="content text-white">{msg.content}</span>
-            <span className="text-xs text-gray-500 ml-2">
-              {new Date(msg.timestamp).toLocaleTimeString()}
-            </span>
+      <div className="flex gap-4 h-full">
+        {/* 在线用户列表 - 移除 hidden md:block,让移动端也显示 */}
+        <div className="w-48 bg-white/10 rounded-lg p-3">
+          <h3 className="text-primary font-bold mb-3 text-sm">
+            在线玩家 ({onlineUsers.length})
+          </h3>
+          <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
+            {onlineUsers.map((user) => (
+              <div
+                key={user.id}
+                className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition"
+              >
+                {user.username}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <div className="chat-input flex gap-2">
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          placeholder={connected ? "输入消息..." : "正在连接..."}
-          disabled={!connected}
-          className="flex-1 p-2 rounded bg-white/10 text-white border border-white/20 disabled:opacity-50"
-        />
-        <button
-          onClick={sendMessage}
-          disabled={!connected}
-          className="px-4 py-2 bg-primary hover:bg-secondary text-black rounded transition disabled:opacity-50"
-        >
-          发送
-        </button>
+        {/* 聊天区域 */}
+        <div className="flex-1 flex flex-col">
+          {username && (
+            <div className="text-white text-sm mb-2">当前用户：{username}</div>
+          )}
+
+          <div className="chat-messages flex-1 overflow-y-auto mb-5 p-3 bg-white/10 rounded-lg">
+            {messages.map((msg: Message, index: number) => (
+              <div
+                key={index}
+                className={`message m-2 p-2 rounded ${
+                  msg.type === "system"
+                    ? "bg-gray-700/50 text-gray-300"
+                    : "bg-white/5"
+                }`}
+              >
+                <span className="username text-primary font-bold mr-2">
+                  {msg.username}
+                </span>
+                <span className="content text-white">{msg.content}</span>
+                <span className="text-xs text-gray-500 ml-2">
+                  {new Date(msg.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="chat-input flex gap-2">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={handleInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder={connected ? "输入消息..." : "正在连接..."}
+              disabled={!connected}
+              className="flex-1 p-2 rounded bg-white/10 text-white border border-white/20 disabled:opacity-50"
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!connected}
+              className="px-4 py-2 bg-primary hover:bg-secondary text-black rounded transition disabled:opacity-50"
+            >
+              发送
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

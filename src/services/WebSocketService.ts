@@ -1,5 +1,56 @@
 import { EventEmitter } from "./EventEmitter";
 
+// 添加新的消息类型定义
+interface UserOnlineEvent {
+  type: "user_online";
+  data: {
+    id: number;
+    username: string;
+    timestamp: number;
+  };
+  online_count: number;
+}
+
+interface UserOfflineEvent {
+  type: "user_offline";
+  data: {
+    id: number;
+    username: string;
+    timestamp: number;
+  };
+  online_count: number;
+}
+
+interface UserListUpdateEvent {
+  type: "user_list_update";
+  data: {
+    users: Array<{
+      id: number;
+      username: string;
+    }>;
+    timestamp: number;
+  };
+  online_count: number;
+}
+
+interface ChatMessage {
+  type: "chat";
+  content: string;
+  username: string;
+  timestamp: number;
+}
+
+interface HistoryMessage {
+  type: "history";
+  messages: ChatMessage[];
+}
+
+type WebSocketMessage =
+  | UserOnlineEvent
+  | UserOfflineEvent
+  | ChatMessage
+  | HistoryMessage;
+
 export class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
   private readonly baseUrl: string;
@@ -7,6 +58,8 @@ export class WebSocketService extends EventEmitter {
   private readonly maxReconnectAttempts = 3;
   private static instance: WebSocketService | null = null;
   private isConnecting = false; // 添加连接状态标记
+  private heartbeatInterval: number | null = null;
+  private readonly HEARTBEAT_INTERVAL = 30000;
 
   private constructor() {
     super();
@@ -62,10 +115,26 @@ export class WebSocketService extends EventEmitter {
 
     this.ws.onmessage = (event) => {
       try {
-        const message = JSON.parse(event.data);
-        console.log("[WebSocket] 准备发送消息事件:", message);
-        this.emit("message", message);
-        console.log("[WebSocket] 消息事件发送完成");
+        const message = JSON.parse(event.data) as WebSocketMessage;
+        console.log("[WebSocket] 收到消息:", message);
+
+        // 根据消息类型分发事件
+        switch (message.type) {
+          case "user_online":
+            this.emit("user_online", message);
+            break;
+          case "user_offline":
+            this.emit("user_offline", message);
+            break;
+          case "chat":
+            this.emit("message", message);
+            break;
+          case "history":
+            this.emit("message", message);
+            break;
+          default:
+            console.warn("[WebSocket] 未知消息类型:", message);
+        }
       } catch (e) {
         console.error("Failed to parse message:", e);
       }
@@ -97,8 +166,12 @@ export class WebSocketService extends EventEmitter {
 
     this.ws.onopen = () => {
       this.isConnecting = false;
-      this.reconnectAttempts = 0; // 连接成功后重置重连次数
+      this.reconnectAttempts = 0;
+      this.startHeartbeat();
       this.emit("connected");
+
+      // 连接成功后主动获取在线用户列表
+      this.emit("request_online_users");
     };
   }
 
@@ -117,6 +190,7 @@ export class WebSocketService extends EventEmitter {
   }
 
   disconnect() {
+    this.stopHeartbeat();
     if (this.ws) {
       this.isConnecting = false;
       this.ws.onclose = null; // 移除重连逻辑
@@ -128,5 +202,29 @@ export class WebSocketService extends EventEmitter {
   // 添加移除所有监听器的方法
   public removeAllListeners(): void {
     this.events = {};
+  }
+
+  private startHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+    }
+
+    this.heartbeatInterval = window.setInterval(() => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        this.ws.send(
+          JSON.stringify({
+            type: "heartbeat",
+            timestamp: Date.now(),
+          }),
+        );
+      }
+    }, this.HEARTBEAT_INTERVAL);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
   }
 }

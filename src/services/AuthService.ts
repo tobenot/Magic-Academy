@@ -15,6 +15,11 @@ interface LoginResponse {
   id: number;
 }
 
+interface OnlineUser {
+  id: number;
+  username: string;
+}
+
 export class AuthService {
   private readonly apiBaseUrl: string;
 
@@ -100,6 +105,23 @@ export class AuthService {
 
     if (!response.ok) {
       throw new Error("获取用户列表失败");
+    }
+
+    return response.json();
+  }
+
+  async getOnlineUsers(): Promise<OnlineUser[]> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("未登录");
+
+    const response = await fetch(`${this.apiBaseUrl}/user/online`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("获取在线用户列表失败");
     }
 
     return response.json();
