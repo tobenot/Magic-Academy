@@ -34,11 +34,11 @@ export class AuthService {
       body: JSON.stringify(credentials),
     });
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-
     const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "请求失败，请重试");
+    }
 
     if (data.token) {
       localStorage.setItem("token", data.token);

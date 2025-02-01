@@ -15,6 +15,12 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
     password: "",
   });
 
+  // 添加状态控制提示文字显示
+  const [showHints, setShowHints] = useState({
+    username: false,
+    password: false,
+  });
+
   const { modalState, showModal, hideModal } = useModal();
 
   // 直接使用导入的版本号
@@ -36,10 +42,10 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
         showModal("成功", response.message, "success");
       }
     } catch (error) {
-      console.error("Error:", error);
+      // 显示具体的错误信息
       showModal(
         "错误",
-        `${type === "login" ? "登录" : "注册"}失败，请重试`,
+        error instanceof Error ? error.message : "未知错误",
         "error",
       );
     }
@@ -56,24 +62,62 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
         </h1>
 
         <form className="space-y-4">
-          <input
-            type="text"
-            placeholder="用户名"
-            className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
-            value={credentials.username}
-            onChange={(e) =>
-              setCredentials((prev) => ({ ...prev, username: e.target.value }))
-            }
-          />
-          <input
-            type="password"
-            placeholder="密码"
-            className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
-            value={credentials.password}
-            onChange={(e) =>
-              setCredentials((prev) => ({ ...prev, password: e.target.value }))
-            }
-          />
+          <div className="space-y-1">
+            <input
+              type="text"
+              placeholder="用户名"
+              className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
+              value={credentials.username}
+              onChange={(e) =>
+                setCredentials((prev) => ({
+                  ...prev,
+                  username: e.target.value,
+                }))
+              }
+              onFocus={() =>
+                setShowHints((prev) => ({ ...prev, username: true }))
+              }
+              onBlur={() =>
+                setShowHints((prev) => ({ ...prev, username: false }))
+              }
+            />
+            {showHints.username && (
+              <p className="text-xs text-gray-400 text-left animate-fade-in">
+                3-20个字符，可使用字母、数字、下划线
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <input
+              type="password"
+              placeholder="密码"
+              className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
+              value={credentials.password}
+              onChange={(e) =>
+                setCredentials((prev) => ({
+                  ...prev,
+                  password: e.target.value,
+                }))
+              }
+              onFocus={() =>
+                setShowHints((prev) => ({ ...prev, password: true }))
+              }
+              onBlur={() =>
+                setShowHints((prev) => ({ ...prev, password: false }))
+              }
+            />
+            {showHints.password && (
+              <div className="space-y-0.5 animate-fade-in">
+                <p className="text-xs text-gray-400 text-left">
+                  6-20个字符，需包含字母和数字
+                </p>
+                <p className="text-xs text-gray-400 text-left">
+                  密码不会明文储存，但建议新想一个记在备忘录里
+                </p>
+              </div>
+            )}
+          </div>
 
           <div className="flex justify-between gap-4">
             <button
