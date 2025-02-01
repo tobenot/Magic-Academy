@@ -4,7 +4,7 @@ import { AuthService } from "../services/AuthService";
 import versionJson from "../assets/config/version.json";
 
 interface AuthFormProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (userId: number) => void;
 }
 
 const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
@@ -23,7 +23,12 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
 
       alert(response.message);
       if (type === "login" && response.message === "登录成功") {
-        onLoginSuccess();
+        if (typeof response.id === "number") {
+          onLoginSuccess(response.id);
+        } else {
+          console.error("登录响应中缺少用户ID");
+          alert("登录成功，但获取用户信息失败");
+        }
       }
     } catch (error) {
       console.error("Error:", error);

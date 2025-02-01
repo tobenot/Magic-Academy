@@ -75,7 +75,14 @@ const ChatRoom = (): JSX.Element => {
     const checkAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
-        if (user) {
+        if (user && typeof user === "object" && "username" in user) {
+          console.log("Current user:", user);
+
+          if (typeof user.username !== "string") {
+            console.error("Invalid username type:", typeof user.username);
+            return;
+          }
+
           setUsername(user.username);
           const ws = WebSocketService.getInstance();
           setWsService(ws);
@@ -94,9 +101,13 @@ const ChatRoom = (): JSX.Element => {
             ws.off("disconnect", handleDisconnect);
             ws.off("error", handleError);
           };
+        } else {
+          console.error("Invalid user data:", user);
+          authService.logout();
         }
       } catch (error) {
         console.error("Auth check failed:", error);
+        authService.logout();
       }
     };
 

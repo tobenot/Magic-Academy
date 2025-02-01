@@ -3,10 +3,16 @@ interface UserCredentials {
   password: string;
 }
 
+interface User {
+  id: number;
+  username: string;
+}
+
 interface LoginResponse {
   message: string;
   username: string;
   token: string;
+  id: number;
 }
 
 export class AuthService {
@@ -37,6 +43,9 @@ export class AuthService {
     if (data.token) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("username", data.username);
+      if (typeof data.id === "number") {
+        localStorage.setItem("userId", data.id.toString());
+      }
     }
 
     return data;
@@ -50,7 +59,7 @@ export class AuthService {
     return this.makeRequest("/register", credentials);
   }
 
-  async getCurrentUser(): Promise<{ username: string } | null> {
+  async getCurrentUser(): Promise<User | null> {
     const token = localStorage.getItem("token");
     if (!token) return null;
 
@@ -65,10 +74,10 @@ export class AuthService {
         throw new Error("认证失败");
       }
 
-      return response.json();
+      const user = await response.json();
+      return user;
     } catch (error) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
+      this.logout();
       return null;
     }
   }
@@ -76,9 +85,10 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem("token");
     localStorage.removeItem("username");
+    localStorage.removeItem("userId");
   }
 
-  async getUserList(): Promise<Array<{ username: string }>> {
+  async getUserList(): Promise<User[]> {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("未登录");
 
