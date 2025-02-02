@@ -13,6 +13,7 @@ import {
   WSUserListMessage,
   WSUser as OnlineUser,
   WSInteractionMessage,
+  WSServerMessage,
 } from "../types/websocket";
 import UserProfileCard from "./UserProfile";
 
@@ -40,12 +41,58 @@ const ChatRoom = (): JSX.Element => {
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  // 使用 useCallback 包装消息处理函数
-  const handleMessage = useCallback((message: Message) => {
-    if (message.type === "history") {
-      setMessages(message.messages || []);
-    } else {
-      setMessages((prev) => [...prev, message]);
+  // 处理消息发送
+  const sendMessage = useCallback((): void => {
+    if (!inputMessage.trim()) return;
+    wsService?.sendMessage(inputMessage.trim());
+    setInputMessage("");
+  }, [inputMessage, wsService]);
+
+  // 修改消息处理函数，使用统一的 message.data.message 作为显示文本
+  const handleMessage = useCallback((message: WSServerMessage) => {
+    switch (message.data.type) {
+      case "chat":
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "chat",
+            username: message.data.initiatorName,
+            content: message.data.message, // 使用统一的 message 字段
+            timestamp: message.timestamp,
+            initiatorId: message.data.initiatorId,
+          },
+        ]);
+        break;
+
+      case "interaction":
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "interaction",
+            username: message.data.initiatorName,
+            content: message.data.message, // 使用统一的 message 字段
+            timestamp: message.timestamp,
+            actionId: message.data.actionId,
+            status: message.data.status,
+            duration: message.data.duration,
+            initiatorId: message.data.initiatorId,
+            targetId: message.data.targetId,
+            targetName: message.data.targetName,
+          },
+        ]);
+        break;
+
+      case "system":
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "system",
+            username: "System",
+            content: message.data.message, // 使用统一的 message 字段
+            timestamp: message.timestamp,
+          },
+        ]);
+        break;
     }
   }, []);
 
@@ -62,13 +109,6 @@ const ChatRoom = (): JSX.Element => {
   const handleError = useCallback((error: any) => {
     console.error("WebSocket 错误:", error);
   }, []);
-
-  // 处理消息发送
-  const sendMessage = useCallback((): void => {
-    if (!inputMessage.trim()) return;
-    wsService?.sendMessage(inputMessage.trim());
-    setInputMessage("");
-  }, [inputMessage, wsService]);
 
   const handleInputChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>): void => {
@@ -241,78 +281,52 @@ const ChatRoom = (): JSX.Element => {
 
   // 修改消息渲染部分
   const renderMessage = (msg: Message) => {
-    switch (msg.type) {
-      case "interaction":
-        return (
-          <div
-            className={`message m-2 p-2 rounded transition-all ${
-              msg.status === "active"
-                ? msg.duration
-                  ? "bg-primary/10 border border-primary/20" // 持续性动作开始
-                  : "bg-white/5" // 即时动作
-                : "bg-white/5 opacity-75" // 动作结束
-            }`}
-          >
-            {/* 用户名 */}
-            <span
-              className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
-              onClick={() => {
-                if (msg.initiatorId) setSelectedUserId(msg.initiatorId);
-              }}
-            >
-              {msg.username}
-            </span>
+    const messageClass = {
+      chat: "bg-white/5",
+      system: "bg-gray-700/50 text-gray-300",
+      interaction:
+        msg.status === "active"
+          ? msg.duration
+            ? "bg-primary/10 border border-primary/20" // 持续性动作
+            : "bg-white/5" // 即时动作
+          : "bg-white/5 opacity-75", // 已完成动作
+    }[msg.type];
 
-            {/* 消息内容 */}
-            <span className="content text-white">{msg.content}</span>
+    return (
+      <div className={`message m-2 p-2 rounded transition-all ${messageClass}`}>
+        {/* 用户名 */}
+        <span
+          className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
+          onClick={() => msg.initiatorId && setSelectedUserId(msg.initiatorId)}
+        >
+          {msg.username}
+        </span>
 
-            {/* 持续性动作的进度条 */}
-            {msg.duration && msg.status === "active" && (
-              <div className="mt-2 h-1 bg-white/10 rounded overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-1000"
-                  style={{
-                    width: "100%",
-                    animation: `progress ${msg.duration}ms linear`,
-                  }}
-                />
-              </div>
-            )}
+        {/* 消息内容 */}
+        <span className="content text-white">{msg.content}</span>
 
-            {/* 时间戳 */}
-            <span className="text-xs text-gray-500 ml-2">
-              {new Date(msg.timestamp).toLocaleTimeString()}
-            </span>
-          </div>
-        );
+        {/* 持续性动作进度条 */}
+        {msg.type === "interaction" &&
+          msg.duration &&
+          msg.status === "active" && (
+            <div className="mt-2 h-1 bg-white/10 rounded overflow-hidden">
+              <div
+                className="h-full bg-primary animate-progress animate-progress-glow"
+                style={
+                  {
+                    "--duration": `${msg.duration}ms`,
+                  } as React.CSSProperties
+                }
+              />
+            </div>
+          )}
 
-      default:
-        return (
-          <div
-            className={`message m-2 p-2 rounded ${
-              msg.type === "system"
-                ? "bg-gray-700/50 text-gray-300"
-                : "bg-white/5"
-            }`}
-          >
-            <span
-              className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
-              onClick={() => {
-                const userId = onlineUsers.find(
-                  (u) => u.username === msg.username,
-                )?.id;
-                if (userId) setSelectedUserId(userId);
-              }}
-            >
-              {msg.username}
-            </span>
-            <span className="content text-white">{msg.content}</span>
-            <span className="text-xs text-gray-500 ml-2">
-              {new Date(msg.timestamp).toLocaleTimeString()}
-            </span>
-          </div>
-        );
-    }
+        {/* 时间戳 */}
+        <span className="text-xs text-gray-500 ml-2">
+          {new Date(msg.timestamp).toLocaleTimeString()}
+        </span>
+      </div>
+    );
   };
 
   return (

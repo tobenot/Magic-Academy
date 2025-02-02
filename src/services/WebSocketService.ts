@@ -175,17 +175,33 @@ export class WebSocketService extends EventEmitter {
 
   public sendMessage(content: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      const message: WSChatMessage = {
+      const message = {
         type: WSMessageType.CHAT,
-        content,
-        timestamp: Date.now(),
-        sequence: ++this.messageSequence,
-        username: localStorage.getItem("username") || "unknown",
+        data: {
+          content,
+          timestamp: Date.now(),
+        },
       };
       console.log("[WebSocket] 发送消息:", message);
       this.ws.send(JSON.stringify(message));
     } else {
       console.warn("[WebSocket] 未连接，消息发送失败");
+    }
+  }
+
+  public sendInteraction(actionId: string, targetId: number): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      const message = {
+        type: WSMessageType.INTERACTION_START,
+        data: {
+          actionId,
+          targetId,
+        },
+      };
+      console.log("[WebSocket] 发送交互:", message);
+      this.ws.send(JSON.stringify(message));
+    } else {
+      console.warn("[WebSocket] 未连接，交互发送失败");
     }
   }
 

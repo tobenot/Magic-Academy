@@ -153,20 +153,22 @@ const UserProfileCard = ({
     fetchActions();
   }, [fetchProfile, fetchActions]);
 
-  const handleActionClick = async (action: InteractionAction) => {
-    try {
-      const wsService = WebSocketService.getInstance();
-      wsService.sendMessage({
-        type: "interaction_start",
-        actionId: action.id,
-        targetId: userId,
-      });
+  const wsService = WebSocketService.getInstance();
+
+  // 修改动作处理函数
+  const handleActionClick = useCallback(
+    (action: InteractionAction) => {
+      if (!wsService) return;
+
+      // 使用新的消息格式发送交互请求
+      wsService.sendInteraction(action.id, userId);
+
+      // 关闭动作菜单
       setShowActionMenu(false);
-      onClose();
-    } catch (err) {
-      console.error("发起交互失败:", err);
-    }
-  };
+      setSelectedCategory(null);
+    },
+    [userId, wsService],
+  );
 
   // 修改分类标签渲染
   const categories = Object.keys(actions) as ActionCategory[];
