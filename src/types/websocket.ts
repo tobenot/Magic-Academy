@@ -5,47 +5,23 @@ export interface BaseWSMessage {
   sequence?: number; // 添加消息序列号，用于消息排序和重传
 }
 
-// 2. 消息内容类型
-export interface MessageContent {
-  type: "chat" | "interaction" | "system";
-  content?: string;
-  actionId?: string;
-  initiatorId: number;
-  targetId?: number;
-  duration?: number;
-  status?: InteractionStatus;
-  initiatorName: string;
-  targetName?: string;
-  message: string;
-}
-
-// 3. 统一服务端消息格式
-export interface WSServerMessage extends BaseWSMessage {
-  data: MessageContent;
-  messageId?: string;
-  replyTo?: string;
-}
-
-// 4. 消息类型枚举
+// 2. 消息类型枚举
 export enum WSMessageType {
-  // 系统消息
-  CONNECT = "connect",
-  DISCONNECT = "disconnect",
-  ERROR = "error",
-  HEARTBEAT = "heartbeat",
-
-  // 用户状态
   USER_ONLINE = "user_online",
   USER_OFFLINE = "user_offline",
   USER_LIST_UPDATE = "user_list_update",
-
-  // 聊天消息
   CHAT = "chat",
   HISTORY = "history",
+  ERROR = "error",
+  CONNECT = "connect",
+  DISCONNECT = "disconnect",
   INTERACTION = "interaction",
+  INTERACTION_UPDATE = "interaction_update",
+  INTERACTION_START = "interaction_start",
+  HEARTBEAT = "heartbeat",
 }
 
-// 5. 用户信息类型
+// 3. 用户信息类型
 export interface WSUser {
   id: number;
   username: string;
@@ -53,7 +29,7 @@ export interface WSUser {
   lastActive?: number; // 最后活跃时间
 }
 
-// 6. 错误消息类型
+// 4. 错误消息类型
 export interface WSErrorMessage extends BaseWSMessage {
   type: WSMessageType.ERROR;
   code: string; // 错误代码
@@ -61,7 +37,7 @@ export interface WSErrorMessage extends BaseWSMessage {
   details?: any; // 详细信息
 }
 
-// 7. 系统消息类型
+// 5. 系统消息类型
 export interface WSSystemMessage extends BaseWSMessage {
   type:
     | WSMessageType.CONNECT
@@ -73,7 +49,7 @@ export interface WSSystemMessage extends BaseWSMessage {
   };
 }
 
-// 8. 聊天消息类型
+// 6. 聊天消息类型
 export interface WSChatMessage extends BaseWSMessage {
   type: WSMessageType.CHAT;
   content: string;
@@ -82,7 +58,7 @@ export interface WSChatMessage extends BaseWSMessage {
   replyTo?: string; // 回复消息ID
 }
 
-// 9. 历史消息类型
+// 7. 历史消息类型
 export interface WSHistoryMessage extends BaseWSMessage {
   type: WSMessageType.HISTORY;
   messages: WSChatMessage[];
@@ -90,56 +66,58 @@ export interface WSHistoryMessage extends BaseWSMessage {
   lastId?: string; // 最后一条消息ID，用于分页
 }
 
-// 10. 用户状态消息类型
+// 8. 用户状态消息类型
 export interface WSUserStatusMessage extends BaseWSMessage {
   type: WSMessageType.USER_ONLINE | WSMessageType.USER_OFFLINE;
-  data: WSUser;
   online_count: number;
+  username: string;
 }
 
-// 11. 用户列表更新消息
+// 9. 用户列表更新消息
 export interface WSUserListMessage extends BaseWSMessage {
   type: WSMessageType.USER_LIST_UPDATE;
-  data: {
-    users: WSUser[];
-    total: number;
-  };
   online_count: number;
+  users: Array<{
+    id: number;
+    username: string;
+    status: string;
+  }>;
 }
 
-// 12. 交互消息数据结构
+// 10. 交互消息数据结构
 export interface WSInteractionData {
   actionId: string;
   initiatorId: number;
   targetId: number;
   duration?: number;
-  status: "active" | "completed";
+  status: InteractionStatus;
   initiatorName: string;
   targetName: string;
   message: string;
 }
 
-// 13. 交互消息类型
+// 11. 交互消息类型
 export interface WSInteractionMessage extends BaseWSMessage {
-  type: WSMessageType.INTERACTION_UPDATE;
+  type: WSMessageType.INTERACTION;
   data: WSInteractionData;
 }
 
-// 14. 交互开始消息类型
-export interface WSInteractionStartMessage extends BaseWSMessage {
-  type: WSMessageType.INTERACTION_START;
-  actionId: string;
-  targetId: number;
+// 12. 客户端聊天消息类型
+export interface WSClientChatMessage extends BaseWSMessage {
+  type: WSMessageType.CHAT;
+  content: string;
 }
 
-// 15. 客户端消息类型（发送到服务器的消息）
-export interface WSClientMessage extends BaseWSMessage {
-  content?: string;
-  actionId?: string;
-  targetId?: number;
+// 13. 客户端交互消息类型
+export interface WSClientInteractionMessage extends BaseWSMessage {
+  type: WSMessageType.INTERACTION;
+  data: {
+    actionId: string;
+    targetId?: number;
+  };
 }
 
-// 16. 服务端消息联合类型
+// 14. 服务端消息联合类型
 export type WSServerMessage =
   | WSSystemMessage
   | WSErrorMessage
@@ -147,23 +125,13 @@ export type WSServerMessage =
   | WSUserListMessage
   | WSChatMessage
   | WSHistoryMessage
-  | WSInteractionMessage
-  | WSInteractionStartMessage;
+  | WSInteractionMessage;
 
-// 客户端交互消息类型
-export interface WSClientInteractionMessage {
-  type: WSMessageType.INTERACTION;
-  data: {
-    actionId: string;
-    targetId?: number; // 某些动作可选
-  };
-}
-
-// 更新客户端消息联合类型
+// 15. 客户端消息联合类型
 export type WSClientMessage =
   | WSClientChatMessage
   | WSClientInteractionMessage
   | WSSystemMessage;
 
-// 修改动作状态类型
+// 16. 交互状态类型
 export type InteractionStatus = "active" | "completed" | "instant";

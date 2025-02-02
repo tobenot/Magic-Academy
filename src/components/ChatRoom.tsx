@@ -75,7 +75,9 @@ const ChatRoom = (): JSX.Element => {
             actionId: message.data.actionId,
             status: message.data.status,
             duration:
-              message.data.duration > 0 ? message.data.duration : undefined,
+              message.data.duration && message.data.duration > 0
+                ? message.data.duration
+                : undefined,
             initiatorId: message.data.initiatorId,
             targetId: message.data.targetId,
             targetName: message.data.targetName,
@@ -147,7 +149,10 @@ const ChatRoom = (): JSX.Element => {
         timestamp: message.timestamp,
         actionId: message.data.actionId,
         status: message.data.status,
-        duration: message.data.duration > 0 ? message.data.duration : undefined,
+        duration:
+          message.data.duration && message.data.duration > 0
+            ? message.data.duration
+            : undefined,
         initiatorId: message.data.initiatorId,
         targetId: message.data.targetId,
         targetName: message.data.targetName,
