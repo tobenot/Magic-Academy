@@ -82,7 +82,7 @@ const ChatRoom = (): JSX.Element => {
               initiatorId: msg.data?.initiatorId,
               actionId: msg.data?.actionId,
               status: msg.data?.status,
-              duration: msg.data?.duration,
+              duration: msg.data?.duration > 0 ? msg.data.duration : undefined,
               targetId: msg.data?.targetId,
               targetName: msg.data?.targetName,
             }));
@@ -101,7 +101,10 @@ const ChatRoom = (): JSX.Element => {
             timestamp: message.timestamp,
             actionId: message.data.actionId,
             status: message.data.status,
-            duration: message.data.duration,
+            duration:
+              message.data.duration && message.data.duration > 0
+                ? message.data.duration
+                : undefined,
             initiatorId: message.data.initiatorId,
             targetId: message.data.targetId,
             targetName: message.data.targetName,
