@@ -13,7 +13,9 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
   const [credentials, setCredentials] = useState({
     username: "",
     password: "",
+    nickname: "",
   });
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
   // 添加状态控制提示文字显示
   const [showHints, setShowHints] = useState({
@@ -26,27 +28,40 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
   // 直接使用导入的版本号
   const version = versionJson.version;
 
-  const handleSubmit = async (
-    type: "login" | "register",
-    e: React.FormEvent,
-  ): Promise<void> => {
-    e.preventDefault(); // 阻止表单默认提交
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault();
     try {
       const authService = new AuthService();
-      const response = await authService[type](credentials);
+      const requestCredentials =
+        authMode === "login"
+          ? { username: credentials.username, password: credentials.password }
+          : { ...credentials };
 
-      if (type === "login" && response.message === "登录成功") {
-        if (typeof response.id === "number") {
-          showModal("成功", "登录成功！", "success");
-          onLoginSuccess(response.id);
+      const response =
+        authMode === "login"
+          ? await authService.login(requestCredentials)
+          : await authService.register(requestCredentials);
+
+      if (authMode === "login") {
+        if (response.message === "登录成功") {
+          if (typeof response.id === "number") {
+            showModal("成功", "登录成功！", "success");
+            onLoginSuccess(response.id);
+          } else {
+            showModal("错误", "登录成功，但获取用户信息失败", "error");
+          }
         } else {
-          showModal("错误", "登录成功，但获取用户信息失败", "error");
+          showModal("错误", response.message, "error");
         }
+      } else if (authMode === "register") {
+        // 注册成功后自动切换到登录模式
+        showModal("成功", "注册成功，请登录", "success");
+        setAuthMode("login");
+        setCredentials((prev) => ({ ...prev, nickname: "" }));
       } else {
         showModal("成功", response.message, "success");
       }
     } catch (error) {
-      // 显示具体的错误信息
       showModal(
         "错误",
         error instanceof Error ? error.message : "未知错误",
@@ -67,7 +82,7 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
 
         <form
           className="space-y-4"
-          onSubmit={(e) => handleSubmit("login", e)}
+          onSubmit={handleSubmit}
           id="loginForm"
           method="post"
           autoComplete="on"
@@ -99,6 +114,25 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
               </p>
             )}
           </div>
+
+          {authMode === "register" && (
+            <div className="space-y-1">
+              <input
+                type="text"
+                name="nickname"
+                placeholder="昵称 (可选, 最大20字符)"
+                className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
+                value={credentials.nickname}
+                maxLength={20}
+                onChange={(e) =>
+                  setCredentials((prev) => ({
+                    ...prev,
+                    nickname: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          )}
 
           <div className="space-y-1">
             <input
@@ -133,20 +167,24 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
             )}
           </div>
 
-          <div className="flex justify-between gap-4">
-            <button
-              type="button"
-              onClick={(e) => handleSubmit("register", e)}
-              className="flex-1 py-2 px-4 bg-primary hover:bg-secondary text-black rounded transition"
-            >
-              注册
-            </button>
+          <div className="flex justify-center">
             <button
               type="submit"
-              className="flex-1 py-2 px-4 bg-primary hover:bg-secondary text-black rounded transition"
+              className="w-full py-2 px-4 bg-primary hover:bg-secondary text-black rounded transition"
             >
-              登录
+              {authMode === "login" ? "登录" : "注册"}
             </button>
+          </div>
+          <div className="mt-2 text-sm text-gray-400 text-center">
+            {authMode === "login" ? "没有账号？" : "已有账号？"}
+            <span
+              className="cursor-pointer text-primary underline ml-1"
+              onClick={() =>
+                setAuthMode(authMode === "login" ? "register" : "login")
+              }
+            >
+              {authMode === "login" ? "注册" : "登录"}
+            </span>
           </div>
         </form>
 

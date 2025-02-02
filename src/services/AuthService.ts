@@ -1,6 +1,7 @@
 interface UserCredentials {
   username: string;
   password: string;
+  nickname?: string;
 }
 
 interface User {
@@ -68,7 +69,8 @@ export class AuthService {
   }
 
   async login(credentials: UserCredentials): Promise<LoginResponse> {
-    return this.makeRequest("/login", credentials);
+    const { nickname, ...loginCredentials } = credentials;
+    return this.makeRequest("/login", loginCredentials);
   }
 
   async register(credentials: UserCredentials): Promise<LoginResponse> {
