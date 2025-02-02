@@ -69,23 +69,28 @@ const ChatRoom = (): JSX.Element => {
 
       case WSMessageType.CHAT_HISTORY:
         {
-          // 修改历史消息解析，注意每条消息的内容在 data 内部
-          const historyData = message.data as unknown as { messages: any[] };
+          // 按照新的接口格式解析历史消息
+          const historyData = message.data as WSChatHistoryData;
           if (Array.isArray(historyData.messages)) {
-            const historyMessages = historyData.messages.map((msg: any) => ({
-              type: msg.data?.type,
-              username:
-                msg.data?.initiatorName ||
-                (msg.data?.type === "system" ? "System" : "未知用户"),
-              content: msg.data?.message || msg.data?.content || "",
-              timestamp: msg.timestamp, // 使用外层的 timestamp 值
-              initiatorId: msg.data?.initiatorId,
-              actionId: msg.data?.actionId,
-              status: msg.data?.status,
-              duration: msg.data?.duration > 0 ? msg.data.duration : undefined,
-              targetId: msg.data?.targetId,
-              targetName: msg.data?.targetName,
-            }));
+            const historyMessages = historyData.messages.map(
+              (msg: WSServerMessage) => ({
+                type: msg.data.type,
+                username:
+                  msg.data.initiatorName ||
+                  (msg.data.type === "system" ? "System" : "未知用户"),
+                content: msg.data.message, // 此处message为必填字段
+                timestamp: msg.timestamp, // 使用外层的timestamp值
+                initiatorId: msg.data.initiatorId,
+                actionId: msg.data.actionId,
+                status: msg.data.status,
+                duration:
+                  msg.data.duration && msg.data.duration > 0
+                    ? msg.data.duration
+                    : undefined,
+                targetId: msg.data.targetId,
+                targetName: msg.data.targetName,
+              }),
+            );
             setMessages((prev) => [...historyMessages, ...prev]);
           }
         }

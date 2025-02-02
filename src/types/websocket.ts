@@ -61,20 +61,9 @@ export interface WSMessageData {
   details?: any; // 错误详情
 }
 
-// 新增: 历史聊天消息数据结构接口
-export interface WSChatHistoryData {
-  messages: Array<{
-    type: "chat" | "system" | "interaction";
-    message: string;
-    timestamp: number;
-    initiatorId?: number;
-    initiatorName?: string;
-    targetId?: number;
-    targetName?: string;
-    actionId?: string;
-    status?: "active" | "completed" | "instant";
-    duration?: number;
-  }>;
+// 修改: 更新历史聊天消息接口，继承自 WSMessageData，以满足必填字段要求
+export interface WSChatHistoryData extends WSMessageData {
+  messages: WSServerMessage[];
 }
 
 // 5. 服务端消息类型
