@@ -23,6 +23,9 @@ export enum WSMessageType {
   CHAT = "chat",
   SYSTEM = "system",
   INTERACTION = "interaction",
+
+  // 新增的历史聊天消息类型（使用小写值与后端一致）
+  CHAT_HISTORY = "chat_history",
 }
 
 // 3. 用户信息类型
@@ -56,6 +59,22 @@ export interface WSMessageData {
   // 错误信息
   code?: string; // 错误代码
   details?: any; // 错误详情
+}
+
+// 新增: 历史聊天消息数据结构接口
+export interface WSChatHistoryData {
+  messages: Array<{
+    type: "chat" | "system" | "interaction";
+    message: string;
+    timestamp: number;
+    initiatorId?: number;
+    initiatorName?: string;
+    targetId?: number;
+    targetName?: string;
+    actionId?: string;
+    status?: "active" | "completed" | "instant";
+    duration?: number;
+  }>;
 }
 
 // 5. 服务端消息类型
