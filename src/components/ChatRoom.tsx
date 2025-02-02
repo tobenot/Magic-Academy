@@ -8,9 +8,10 @@ import {
 import { WebSocketService } from "../services/WebSocketService";
 import { AuthService } from "../services/AuthService";
 import {
-  UserOnlineEvent,
-  UserOfflineEvent,
-  UserListUpdateEvent,
+  WSMessageType,
+  WSUserStatusMessage,
+  WSUserListMessage,
+  WSUser as OnlineUser,
 } from "../types/websocket";
 
 interface Message {
@@ -19,11 +20,6 @@ interface Message {
   timestamp: number;
   type: "chat" | "system" | "history";
   messages?: Message[];
-}
-
-interface OnlineUser {
-  id: number;
-  username: string;
 }
 
 const ChatRoom = (): JSX.Element => {
@@ -179,8 +175,10 @@ const ChatRoom = (): JSX.Element => {
     return () => clearInterval(interval);
   }, [fetchOnlineUsers]);
 
-  // 添加用户状态事件处理函数
-  const handleUserOnline = useCallback((event: UserOnlineEvent) => {
+  // 更新事件处理函数
+  const handleUserOnline = useCallback((event: WSUserStatusMessage) => {
+    if (event.type !== WSMessageType.USER_ONLINE) return;
+
     setOnlineUsers((prev) => {
       const exists = prev.some((user) => user.id === event.data.id);
       if (!exists) {
@@ -196,11 +194,14 @@ const ChatRoom = (): JSX.Element => {
     });
   }, []);
 
-  const handleUserOffline = useCallback((event: UserOfflineEvent) => {
+  const handleUserOffline = useCallback((event: WSUserStatusMessage) => {
+    if (event.type !== WSMessageType.USER_OFFLINE) return;
+
     setOnlineUsers((prev) => prev.filter((user) => user.id !== event.data.id));
   }, []);
 
-  const handleUserListUpdate = useCallback((event: UserListUpdateEvent) => {
+  const handleUserListUpdate = useCallback((event: WSUserListMessage) => {
+    if (event.type !== WSMessageType.USER_LIST_UPDATE) return;
     setOnlineUsers(event.data.users);
   }, []);
 

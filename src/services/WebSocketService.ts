@@ -1,55 +1,14 @@
 import { EventEmitter } from "./EventEmitter";
-
-// 添加新的消息类型定义
-interface UserOnlineEvent {
-  type: "user_online";
-  data: {
-    id: number;
-    username: string;
-    timestamp: number;
-  };
-  online_count: number;
-}
-
-interface UserOfflineEvent {
-  type: "user_offline";
-  data: {
-    id: number;
-    username: string;
-    timestamp: number;
-  };
-  online_count: number;
-}
-
-interface UserListUpdateEvent {
-  type: "user_list_update";
-  data: {
-    users: Array<{
-      id: number;
-      username: string;
-    }>;
-    timestamp: number;
-  };
-  online_count: number;
-}
-
-interface ChatMessage {
-  type: "chat";
-  content: string;
-  username: string;
-  timestamp: number;
-}
-
-interface HistoryMessage {
-  type: "history";
-  messages: ChatMessage[];
-}
-
-type WebSocketMessage =
-  | UserOnlineEvent
-  | UserOfflineEvent
-  | ChatMessage
-  | HistoryMessage;
+import {
+  WSMessageType,
+  WSServerMessage,
+  WSChatMessage,
+  WSSystemMessage,
+  WSErrorMessage,
+  WSHistoryMessage,
+  WSUserStatusMessage,
+  WSUserListMessage,
+} from "../types/websocket";
 
 export class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
@@ -57,16 +16,16 @@ export class WebSocketService extends EventEmitter {
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 3;
   private static instance: WebSocketService | null = null;
-  private isConnecting = false; // 添加连接状态标记
+  private isConnecting = false;
   private heartbeatInterval: number | null = null;
   private readonly HEARTBEAT_INTERVAL = 30000;
+  private messageSequence = 0;
 
   private constructor() {
     super();
     this.baseUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws");
   }
 
-  // 单例模式获取实例
   public static getInstance(): WebSocketService {
     if (!WebSocketService.instance) {
       WebSocketService.instance = new WebSocketService();
@@ -83,7 +42,6 @@ export class WebSocketService extends EventEmitter {
   }
 
   connect() {
-    // 防止重复连接
     if (
       this.isConnecting ||
       this.ws?.readyState === WebSocket.OPEN ||
@@ -100,7 +58,6 @@ export class WebSocketService extends EventEmitter {
       throw new Error("未登录");
     }
 
-    // 清理旧的连接
     if (this.ws) {
       this.ws.onmessage = null;
       this.ws.onclose = null;
@@ -114,30 +71,7 @@ export class WebSocketService extends EventEmitter {
     this.ws = new WebSocket(url);
 
     this.ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data) as WebSocketMessage;
-        console.log("[WebSocket] 收到消息:", message);
-
-        // 根据消息类型分发事件
-        switch (message.type) {
-          case "user_online":
-            this.emit("user_online", message);
-            break;
-          case "user_offline":
-            this.emit("user_offline", message);
-            break;
-          case "chat":
-            this.emit("message", message);
-            break;
-          case "history":
-            this.emit("message", message);
-            break;
-          default:
-            console.warn("[WebSocket] 未知消息类型:", message);
-        }
-      } catch (e) {
-        console.error("Failed to parse message:", e);
-      }
+      this.handleMessage(event);
     };
 
     this.ws.onclose = (event) => {
@@ -148,7 +82,6 @@ export class WebSocketService extends EventEmitter {
         localStorage.removeItem("username");
         window.location.href = "/login";
       } else if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        // 非认证失败的断开，尝试重连
         this.reconnectAttempts++;
         console.log(
           `尝试重连... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
@@ -170,22 +103,86 @@ export class WebSocketService extends EventEmitter {
       this.startHeartbeat();
       this.emit("connected");
 
-      // 连接成功后主动获取在线用户列表
       this.emit("request_online_users");
     };
   }
 
-  sendMessage(content: string) {
+  private handleMessage(event: MessageEvent): void {
+    try {
+      const message = JSON.parse(event.data) as WSServerMessage;
+      console.log("[WebSocket] 收到消息:", message);
+
+      switch (message.type) {
+        case WSMessageType.USER_ONLINE:
+        case WSMessageType.USER_OFFLINE:
+          this.emit("user_status", message as WSUserStatusMessage);
+          break;
+        case WSMessageType.USER_LIST_UPDATE:
+          this.emit("user_list", message as WSUserListMessage);
+          break;
+        case WSMessageType.CHAT:
+          this.emit("message", message as WSChatMessage);
+          break;
+        case WSMessageType.HISTORY:
+          this.emit("message", message as WSHistoryMessage);
+          break;
+        case WSMessageType.ERROR:
+          this.handleError(message as WSErrorMessage);
+          break;
+        case WSMessageType.CONNECT:
+        case WSMessageType.DISCONNECT:
+          this.handleSystemMessage(message as WSSystemMessage);
+          break;
+        default:
+          console.warn("[WebSocket] 未知消息类型:", message);
+      }
+    } catch (e) {
+      console.error("消息解析失败:", e);
+    }
+  }
+
+  private handleError(error: WSErrorMessage): void {
+    console.error(
+      `[WebSocket] 错误: ${error.code} - ${error.message}`,
+      error.details,
+    );
+    this.emit("error", error);
+  }
+
+  private handleSystemMessage(message: WSSystemMessage): void {
+    if (
+      message.type === WSMessageType.DISCONNECT &&
+      message.data?.reconnectDelay
+    ) {
+      setTimeout(() => this.connect(), message.data.reconnectDelay);
+    }
+    this.emit(message.type, message);
+  }
+
+  public sendMessage(content: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      const message = {
-        type: "chat",
+      const message: WSChatMessage = {
+        type: WSMessageType.CHAT,
         content,
         timestamp: Date.now(),
+        sequence: ++this.messageSequence,
+        username: localStorage.getItem("username") || "unknown",
       };
-      console.log("WebSocket 发送消息:", message);
+      console.log("[WebSocket] 发送消息:", message);
       this.ws.send(JSON.stringify(message));
     } else {
-      console.warn("WebSocket 未连接，消息发送失败");
+      console.warn("[WebSocket] 未连接，消息发送失败");
+    }
+  }
+
+  private sendHeartbeat(): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      const heartbeat: WSSystemMessage = {
+        type: WSMessageType.HEARTBEAT,
+        timestamp: Date.now(),
+        sequence: ++this.messageSequence,
+      };
+      this.ws.send(JSON.stringify(heartbeat));
     }
   }
 
@@ -193,13 +190,12 @@ export class WebSocketService extends EventEmitter {
     this.stopHeartbeat();
     if (this.ws) {
       this.isConnecting = false;
-      this.ws.onclose = null; // 移除重连逻辑
+      this.ws.onclose = null;
       this.ws.close();
       this.ws = null;
     }
   }
 
-  // 添加移除所有监听器的方法
   public removeAllListeners(): void {
     this.events = {};
   }
@@ -210,14 +206,7 @@ export class WebSocketService extends EventEmitter {
     }
 
     this.heartbeatInterval = window.setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
-        this.ws.send(
-          JSON.stringify({
-            type: "heartbeat",
-            timestamp: Date.now(),
-          }),
-        );
-      }
+      this.sendHeartbeat();
     }, this.HEARTBEAT_INTERVAL);
   }
 
