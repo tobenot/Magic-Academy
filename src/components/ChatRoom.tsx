@@ -331,20 +331,7 @@ const ChatRoom = (): JSX.Element => {
           {msg.username}
         </span>
 
-        {msg.type === "interaction" && msg.targetName ? (
-          <span className="content text-white">
-            <span className="text-gray-400 mr-1">对</span>
-            <span
-              className="text-primary cursor-pointer hover:underline mr-1"
-              onClick={() => msg.targetId && setSelectedUserId(msg.targetId)}
-            >
-              {msg.targetName}
-            </span>
-            <span className="text-white">{msg.content}</span>
-          </span>
-        ) : (
-          <span className="content text-white">{msg.content}</span>
-        )}
+        <span className="content text-white">{msg.content}</span>
 
         {msg.type === "interaction" &&
           msg.duration &&
