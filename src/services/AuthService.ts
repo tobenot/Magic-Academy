@@ -31,13 +31,24 @@ export class AuthService {
     endpoint: string,
     credentials: UserCredentials,
   ): Promise<LoginResponse> {
-    const response = await fetch(`${this.apiBaseUrl}/auth${endpoint}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(credentials),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${this.apiBaseUrl}/auth${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
+    } catch (error: any) {
+      if (
+        error instanceof TypeError &&
+        error.message.includes("Failed to fetch")
+      ) {
+        throw new Error("无法链接到服务器，服务器可能未开启");
+      }
+      throw error;
+    }
 
     const data = await response.json();
 
