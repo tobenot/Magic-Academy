@@ -35,8 +35,8 @@ export default {
           },
         },
         progress: {
-          "0%": { width: "100%" },
-          "100%": { width: "0%" },
+          "0%": { width: "0%" },
+          "100%": { width: "100%" },
         },
         "action-pulse": {
           "0%, 100%": { opacity: "1" },
@@ -65,7 +65,7 @@ export default {
       animation: {
         "fade-in": "fade-in 0.3s ease-out",
         "rotate-in": "rotate-in 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-        progress: "progress var(--duration) linear",
+        progress: "progress var(--duration) linear forwards",
         "action-pulse": "action-pulse 2s ease-in-out infinite",
         "action-complete": "action-complete 0.5s ease-out",
         "progress-glow": "progress-glow 2s ease-in-out infinite",

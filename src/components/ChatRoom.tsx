@@ -16,15 +16,15 @@ import {
   WSServerMessage,
 } from "../types/websocket";
 import UserProfileCard from "./UserProfile";
+import classNames from "classnames";
 
 interface Message {
+  type: "chat" | "system" | "interaction";
   username: string;
   content: string;
   timestamp: number;
-  type: "chat" | "system" | "history" | "interaction";
-  messages?: Message[];
   actionId?: string;
-  status?: "active" | "completed";
+  status?: "active" | "completed" | "instant";
   duration?: number;
   initiatorId?: number;
   targetId?: number;
@@ -70,11 +70,12 @@ const ChatRoom = (): JSX.Element => {
           {
             type: "interaction",
             username: message.data.initiatorName,
-            content: message.data.message, // 使用统一的 message 字段
+            content: message.data.message,
             timestamp: message.timestamp,
             actionId: message.data.actionId,
             status: message.data.status,
-            duration: message.data.duration,
+            duration:
+              message.data.duration > 0 ? message.data.duration : undefined,
             initiatorId: message.data.initiatorId,
             targetId: message.data.targetId,
             targetName: message.data.targetName,
@@ -146,7 +147,7 @@ const ChatRoom = (): JSX.Element => {
         timestamp: message.timestamp,
         actionId: message.data.actionId,
         status: message.data.status,
-        duration: message.data.duration,
+        duration: message.data.duration > 0 ? message.data.duration : undefined,
         initiatorId: message.data.initiatorId,
         targetId: message.data.targetId,
         targetName: message.data.targetName,
@@ -284,17 +285,16 @@ const ChatRoom = (): JSX.Element => {
     const messageClass = {
       chat: "bg-white/5",
       system: "bg-gray-700/50 text-gray-300",
-      interaction:
-        msg.status === "active"
-          ? msg.duration
-            ? "bg-primary/10 border border-primary/20" // 持续性动作
-            : "bg-white/5" // 即时动作
-          : "bg-white/5 opacity-75", // 已完成动作
+      interaction: classNames("transition-all", {
+        "bg-primary/10 border border-primary/20":
+          msg.status === "active" && msg.duration,
+        "bg-white/5": msg.status === "instant" || !msg.duration,
+        "bg-white/5 opacity-75": msg.status === "completed",
+      }),
     }[msg.type];
 
     return (
-      <div className={`message m-2 p-2 rounded transition-all ${messageClass}`}>
-        {/* 用户名 */}
+      <div className={`message m-2 p-2 rounded ${messageClass}`}>
         <span
           className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
           onClick={() => msg.initiatorId && setSelectedUserId(msg.initiatorId)}
@@ -302,26 +302,34 @@ const ChatRoom = (): JSX.Element => {
           {msg.username}
         </span>
 
-        {/* 消息内容 */}
-        <span className="content text-white">{msg.content}</span>
+        {msg.type === "interaction" && msg.targetName ? (
+          <span className="content text-white">
+            <span className="text-gray-400 mr-1">对</span>
+            <span
+              className="text-primary cursor-pointer hover:underline mr-1"
+              onClick={() => msg.targetId && setSelectedUserId(msg.targetId)}
+            >
+              {msg.targetName}
+            </span>
+            <span className="text-white">{msg.content}</span>
+          </span>
+        ) : (
+          <span className="content text-white">{msg.content}</span>
+        )}
 
-        {/* 持续性动作进度条 */}
         {msg.type === "interaction" &&
           msg.duration &&
           msg.status === "active" && (
             <div className="mt-2 h-1 bg-white/10 rounded overflow-hidden">
               <div
-                className="h-full bg-primary animate-progress animate-progress-glow"
+                className="h-full bg-primary animate-progress"
                 style={
-                  {
-                    "--duration": `${msg.duration}ms`,
-                  } as React.CSSProperties
+                  { "--duration": `${msg.duration}ms` } as React.CSSProperties
                 }
               />
             </div>
           )}
 
-        {/* 时间戳 */}
         <span className="text-xs text-gray-500 ml-2">
           {new Date(msg.timestamp).toLocaleTimeString()}
         </span>

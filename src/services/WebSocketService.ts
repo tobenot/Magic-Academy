@@ -11,6 +11,18 @@ import {
   WSInteractionMessage,
 } from "../types/websocket";
 
+export enum WSMessageType {
+  USER_ONLINE = "user_online",
+  USER_OFFLINE = "user_offline",
+  USER_LIST_UPDATE = "user_list_update",
+  CHAT = "chat",
+  HISTORY = "history",
+  ERROR = "error",
+  CONNECT = "connect",
+  DISCONNECT = "disconnect",
+  INTERACTION_UPDATE = "interaction",
+}
+
 export class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
   private readonly baseUrl: string;
@@ -135,7 +147,10 @@ export class WebSocketService extends EventEmitter {
           this.handleSystemMessage(message as WSSystemMessage);
           break;
         case WSMessageType.INTERACTION_UPDATE:
-          this.handleInteractionUpdate(message as WSInteractionMessage);
+          this.emit(
+            "interaction_update",
+            message as unknown as WSInteractionMessage,
+          );
           break;
         default:
           console.warn("[WebSocket] 未知消息类型:", message);
@@ -164,12 +179,17 @@ export class WebSocketService extends EventEmitter {
   }
 
   private handleInteractionUpdate(message: WSInteractionMessage): void {
-    this.emit("interaction_update", message);
     this.emit("message", {
-      type: "system",
+      type: "interaction",
       content: message.data.message,
       timestamp: message.timestamp,
-      username: "系统",
+      actionId: message.data.actionId,
+      status: message.data.status,
+      duration: message.data.duration,
+      initiatorId: message.data.initiatorId,
+      targetId: message.data.targetId,
+      initiatorName: message.data.initiatorName,
+      targetName: message.data.targetName,
     });
   }
 
@@ -189,19 +209,35 @@ export class WebSocketService extends EventEmitter {
     }
   }
 
-  public sendInteraction(actionId: string, targetId: number): void {
+  public async sendInteraction(
+    actionId: string,
+    targetId?: number,
+  ): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      const message = {
-        type: WSMessageType.INTERACTION_START,
-        data: {
-          actionId,
-          targetId,
-        },
-      };
-      console.log("[WebSocket] 发送交互:", message);
-      this.ws.send(JSON.stringify(message));
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/interaction/perform`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ actionId, targetId }),
+          },
+        );
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        console.error("[WebSocket] 发送交互失败:", err);
+        throw err;
+      }
     } else {
       console.warn("[WebSocket] 未连接，交互发送失败");
+      throw new Error("WebSocket 未连接");
     }
   }
 

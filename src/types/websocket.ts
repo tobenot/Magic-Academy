@@ -13,7 +13,7 @@ export interface MessageContent {
   initiatorId: number;
   targetId?: number;
   duration?: number;
-  status?: "active" | "completed";
+  status?: InteractionStatus;
   initiatorName: string;
   targetName?: string;
   message: string;
@@ -42,10 +42,7 @@ export enum WSMessageType {
   // 聊天消息
   CHAT = "chat",
   HISTORY = "history",
-
-  // 交互消息
-  INTERACTION_START = "interaction_start",
-  INTERACTION_UPDATE = "interaction_update",
+  INTERACTION = "interaction",
 }
 
 // 5. 用户信息类型
@@ -152,3 +149,21 @@ export type WSServerMessage =
   | WSHistoryMessage
   | WSInteractionMessage
   | WSInteractionStartMessage;
+
+// 客户端交互消息类型
+export interface WSClientInteractionMessage {
+  type: WSMessageType.INTERACTION;
+  data: {
+    actionId: string;
+    targetId?: number; // 某些动作可选
+  };
+}
+
+// 更新客户端消息联合类型
+export type WSClientMessage =
+  | WSClientChatMessage
+  | WSClientInteractionMessage
+  | WSSystemMessage;
+
+// 修改动作状态类型
+export type InteractionStatus = "active" | "completed" | "instant";

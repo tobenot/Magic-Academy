@@ -20,30 +20,31 @@ enum ActionCategory {
   ACTIVITY = "ACTIVITY",
 }
 
-// 修改动作状态类型
-type ActionsByCategory = {
-  [key in ActionCategory]?: InteractionAction[];
-};
-
+// 修改动作接口定义
 interface InteractionAction {
   id: string;
   name: string;
-  duration?: number;
   needsTarget: boolean;
+  duration?: number;
 }
+
+// 修改动作分类类型
+type ActionsByCategory = {
+  [key in ActionCategory]?: InteractionAction[];
+};
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
 const profileCache: Record<number, { data: UserProfile; timestamp: number }> =
   {};
 
-// 添加分类图标映射
+// 修改分类图标映射的定义方式
 const categoryIcons: Record<ActionCategory, string> = {
-  FRIENDLY: "👋", // 友好
-  ROMANTIC: "💝", // 浪漫
-  FUNNY: "😄", // 搞笑
-  MEAN: "😈", // 刻薄
-  PERSONAL: "🎭", // 个人
-  ACTIVITY: "🎮", // 活动
+  FRIENDLY: "👋",
+  ROMANTIC: "💝",
+  FUNNY: "😄",
+  MEAN: "😈",
+  PERSONAL: "🎭",
+  ACTIVITY: "🎮",
 };
 
 // 添加分类显示名称映射
@@ -69,7 +70,7 @@ const CloseButton = ({ onClose }: { onClose: () => void }): JSX.Element => (
 const UserProfileCard = ({
   userId,
   onClose,
-}: UserProfileCardProps): JSX.Element => {
+}: UserProfileCardProps): JSX.Element | null => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +79,7 @@ const UserProfileCard = ({
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<ActionCategory | null>(null);
+  const [loadingActions, setLoadingActions] = useState(false);
 
   const assetLoader = AssetLoader.getInstance();
   const getCardImagePath = (cardId: string): string => {
@@ -128,6 +130,7 @@ const UserProfileCard = ({
 
   const fetchActions = useCallback(async () => {
     try {
+      setLoadingActions(true);
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/interaction/actions`,
         {
@@ -141,10 +144,20 @@ const UserProfileCard = ({
         throw new Error("获取动作列表失败");
       }
 
-      const { data } = await response.json();
-      setActions(data);
+      const { success, data } = await response.json();
+
+      if (success && data) {
+        // 直接使用后端返回的分类数据
+        setActions(data);
+      } else {
+        console.error("动作列表数据格式错误");
+        setActions({});
+      }
     } catch (err) {
       console.error("获取动作列表失败:", err);
+      setActions({});
+    } finally {
+      setLoadingActions(false);
     }
   }, []);
 
@@ -157,21 +170,47 @@ const UserProfileCard = ({
 
   // 修改动作处理函数
   const handleActionClick = useCallback(
-    (action: InteractionAction) => {
+    async (action: InteractionAction) => {
       if (!wsService) return;
 
-      // 使用新的消息格式发送交互请求
-      wsService.sendInteraction(action.id, userId);
+      try {
+        // 如果动作需要目标但没有目标ID，则不执行
+        if (action.needsTarget && !userId) {
+          console.warn("该动作需要目标用户");
+          return;
+        }
 
-      // 关闭动作菜单
-      setShowActionMenu(false);
-      setSelectedCategory(null);
+        // 发送交互请求
+        await wsService.sendInteraction(
+          action.id,
+          action.needsTarget ? userId : undefined,
+        );
+
+        // 关闭动作菜单
+        setShowActionMenu(false);
+        setSelectedCategory(null);
+        onClose();
+      } catch (err) {
+        console.error("执行动作失败:", err);
+        // 这里可以添加错误提示
+      }
     },
-    [userId, wsService],
+    [userId, wsService, onClose],
   );
 
-  // 修改分类标签渲染
-  const categories = Object.keys(actions) as ActionCategory[];
+  // 在选择分类时获取动作列表
+  const handleCategorySelect = useCallback(
+    (category: ActionCategory) => {
+      setSelectedCategory(category);
+      if (!actions[category]) {
+        fetchActions();
+      }
+    },
+    [actions, fetchActions],
+  );
+
+  // 修改 categories 的获取方式
+  const categories = Object.values(ActionCategory);
 
   if (loading) {
     return (
@@ -210,7 +249,16 @@ const UserProfileCard = ({
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+        <div className="relative bg-white/10 p-8 rounded-xl shadow-2xl min-w-[200px]">
+          <CloseButton onClose={onClose} />
+          <div className="text-white">未找到用户资料</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center animate-fade-in">
@@ -320,82 +368,85 @@ const UserProfileCard = ({
         {showActionMenu && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
             <div className="relative bg-white/10 p-8 rounded-xl max-w-md w-full">
-              <h3 className="text-xl font-cinzel text-primary mb-8 text-center">
+              <h3 className="text-xl font-cinzel text-primary mb-6 text-center">
                 选择互动类型
               </h3>
 
-              {/* 轮盘式分类菜单 */}
-              <div className="relative w-64 h-64 mx-auto mb-8">
-                {categories.map((category, index) => {
-                  const angle = (index * 360) / categories.length;
+              {/* 使用网格布局替代轮盘式布局 */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {categories.map((category) => {
                   const isSelected = selectedCategory === category;
 
                   return (
                     <button
                       key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`absolute w-16 h-16 -translate-x-1/2 -translate-y-1/2 rounded-full 
-                        flex flex-col items-center justify-center transition-all duration-300
-                        ${isSelected ? "scale-110 z-10" : "scale-100 hover:scale-105"}
-                        ${isSelected ? "bg-primary text-black" : "bg-white/10 text-white"}
-                        transform-gpu`}
-                      style={{
-                        left: "50%",
-                        top: "50%",
-                        transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-5rem)`,
-                      }}
+                      onClick={() => handleCategorySelect(category)}
+                      className={`
+                        p-4 rounded-xl transition-all duration-300
+                        flex flex-col items-center justify-center gap-2
+                        ${
+                          isSelected
+                            ? "bg-primary text-black scale-105 shadow-lg"
+                            : "bg-white/10 text-white hover:bg-white/20"
+                        }
+                      `}
                     >
-                      <span className="text-2xl transform -rotate-[${angle}deg]">
+                      <span
+                        className="text-2xl"
+                        role="img"
+                        aria-label={categoryNames[category]}
+                      >
                         {categoryIcons[category]}
                       </span>
-                      <span className="text-xs mt-1 transform -rotate-[${angle}deg]">
-                        {categoryNames[category]}
-                      </span>
+                      <span className="text-xs">{categoryNames[category]}</span>
                     </button>
                   );
                 })}
-
-                {/* 中心装饰 */}
-                <div
-                  className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-white/5 
-                  flex items-center justify-center border-2 border-primary/20"
-                >
-                  <div
-                    className="w-16 h-16 rounded-full bg-primary/10 
-                    flex items-center justify-center border border-primary/30"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-primary/20" />
-                  </div>
-                </div>
               </div>
 
               {/* 动作列表 */}
               {selectedCategory && (
-                <div
-                  className="space-y-2 max-h-48 overflow-y-auto 
-                  bg-black/20 rounded-lg p-4 animate-fade-in"
-                >
+                <div className="space-y-2 max-h-48 overflow-y-auto bg-black/20 rounded-lg p-4 animate-fade-in">
                   <h4 className="text-lg font-cinzel text-primary mb-3 flex items-center">
                     <span className="mr-2">
                       {categoryIcons[selectedCategory]}
                     </span>
                     {categoryNames[selectedCategory]}
                   </h4>
-                  {actions[selectedCategory]?.map((action) => (
-                    <button
-                      key={action.id}
-                      onClick={() => handleActionClick(action)}
-                      className="w-full p-3 bg-white/5 hover:bg-white/10 rounded-lg 
-                        text-left transition group flex items-center justify-between"
-                    >
-                      <span className="text-white">{action.name}</span>
-                      {action.duration && (
-                        <span className="text-xs text-gray-400 bg-black/20 px-2 py-1 rounded-full">
-                          {Math.floor(action.duration / 1000)}秒
-                        </span>
-                      )}
-                    </button>
-                  ))}
+
+                  {loadingActions ? (
+                    <div className="flex justify-center py-4">
+                      <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                    </div>
+                  ) : actions[selectedCategory]?.length ? (
+                    actions[selectedCategory]?.map((action) => (
+                      <button
+                        key={action.id}
+                        onClick={() => handleActionClick(action)}
+                        className="w-full p-3 bg-white/5 hover:bg-white/10 rounded-lg 
+                          text-left transition group flex items-center justify-between"
+                        disabled={action.needsTarget && !userId}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-white">{action.name}</span>
+                          {action.needsTarget && (
+                            <span className="text-xs text-gray-400">
+                              (需要目标)
+                            </span>
+                          )}
+                        </div>
+                        {action.duration && (
+                          <span className="text-xs text-gray-400 bg-black/20 px-2 py-1 rounded-full">
+                            {Math.floor(action.duration / 1000)}秒
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-400 py-4">
+                      该分类下暂无可用动作
+                    </div>
+                  )}
                 </div>
               )}
 
