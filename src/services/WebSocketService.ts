@@ -8,6 +8,7 @@ import {
   WSHistoryMessage,
   WSUserStatusMessage,
   WSUserListMessage,
+  WSInteractionMessage,
 } from "../types/websocket";
 
 export class WebSocketService extends EventEmitter {
@@ -133,6 +134,9 @@ export class WebSocketService extends EventEmitter {
         case WSMessageType.DISCONNECT:
           this.handleSystemMessage(message as WSSystemMessage);
           break;
+        case WSMessageType.INTERACTION_UPDATE:
+          this.handleInteractionUpdate(message as WSInteractionMessage);
+          break;
         default:
           console.warn("[WebSocket] 未知消息类型:", message);
       }
@@ -157,6 +161,16 @@ export class WebSocketService extends EventEmitter {
       setTimeout(() => this.connect(), message.data.reconnectDelay);
     }
     this.emit(message.type, message);
+  }
+
+  private handleInteractionUpdate(message: WSInteractionMessage): void {
+    this.emit("interaction_update", message);
+    this.emit("message", {
+      type: "system",
+      content: message.data.message,
+      timestamp: message.timestamp,
+      username: "系统",
+    });
   }
 
   public sendMessage(content: string): void {
@@ -217,3 +231,5 @@ export class WebSocketService extends EventEmitter {
     }
   }
 }
+
+export default WebSocketService;

@@ -3,15 +3,58 @@ import { UserProfile } from "../types/profile";
 import { formatDistance } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import AssetLoader, { AssetType, ImageType } from "../utils/AssetLoader";
+import WebSocketService from "../services/WebSocketService";
 
 interface UserProfileCardProps {
   userId: number;
   onClose: () => void;
 }
 
+// 添加动作分类枚举
+enum ActionCategory {
+  FRIENDLY = "FRIENDLY",
+  ROMANTIC = "ROMANTIC",
+  FUNNY = "FUNNY",
+  MEAN = "MEAN",
+  PERSONAL = "PERSONAL",
+  ACTIVITY = "ACTIVITY",
+}
+
+// 修改动作状态类型
+type ActionsByCategory = {
+  [key in ActionCategory]?: InteractionAction[];
+};
+
+interface InteractionAction {
+  id: string;
+  name: string;
+  duration?: number;
+  needsTarget: boolean;
+}
+
 const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
 const profileCache: Record<number, { data: UserProfile; timestamp: number }> =
   {};
+
+// 添加分类图标映射
+const categoryIcons: Record<ActionCategory, string> = {
+  FRIENDLY: "👋", // 友好
+  ROMANTIC: "💝", // 浪漫
+  FUNNY: "😄", // 搞笑
+  MEAN: "😈", // 刻薄
+  PERSONAL: "🎭", // 个人
+  ACTIVITY: "🎮", // 活动
+};
+
+// 添加分类显示名称映射
+const categoryNames: Record<ActionCategory, string> = {
+  FRIENDLY: "友好",
+  ROMANTIC: "浪漫",
+  FUNNY: "搞笑",
+  MEAN: "刻薄",
+  PERSONAL: "个人",
+  ACTIVITY: "活动",
+};
 
 // 提取关闭按钮组件
 const CloseButton = ({ onClose }: { onClose: () => void }): JSX.Element => (
@@ -31,6 +74,10 @@ const UserProfileCard = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [actions, setActions] = useState<ActionsByCategory>({});
+  const [showActionMenu, setShowActionMenu] = useState(false);
+  const [selectedCategory, setSelectedCategory] =
+    useState<ActionCategory | null>(null);
 
   const assetLoader = AssetLoader.getInstance();
   const getCardImagePath = (cardId: string): string => {
@@ -79,9 +126,50 @@ const UserProfileCard = ({
     }
   }, [userId]);
 
+  const fetchActions = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/interaction/actions`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("获取动作列表失败");
+      }
+
+      const { data } = await response.json();
+      setActions(data);
+    } catch (err) {
+      console.error("获取动作列表失败:", err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    fetchActions();
+  }, [fetchProfile, fetchActions]);
+
+  const handleActionClick = async (action: InteractionAction) => {
+    try {
+      const wsService = WebSocketService.getInstance();
+      wsService.sendMessage({
+        type: "interaction_start",
+        actionId: action.id,
+        targetId: userId,
+      });
+      setShowActionMenu(false);
+      onClose();
+    } catch (err) {
+      console.error("发起交互失败:", err);
+    }
+  };
+
+  // 修改分类标签渲染
+  const categories = Object.keys(actions) as ActionCategory[];
 
   if (loading) {
     return (
@@ -215,6 +303,114 @@ const UserProfileCard = ({
             )}
           </div>
         </div>
+
+        {/* 添加交互按钮 */}
+        <div className="absolute bottom-6 right-6">
+          <button
+            onClick={() => setShowActionMenu(true)}
+            className="px-4 py-2 bg-primary hover:bg-secondary text-black rounded-full transition"
+          >
+            互动
+          </button>
+        </div>
+
+        {/* 交互动作菜单 */}
+        {showActionMenu && (
+          <div className="fixed inset-0 bg-black/80 flex items-center justify-center">
+            <div className="relative bg-white/10 p-8 rounded-xl max-w-md w-full">
+              <h3 className="text-xl font-cinzel text-primary mb-8 text-center">
+                选择互动类型
+              </h3>
+
+              {/* 轮盘式分类菜单 */}
+              <div className="relative w-64 h-64 mx-auto mb-8">
+                {categories.map((category, index) => {
+                  const angle = (index * 360) / categories.length;
+                  const isSelected = selectedCategory === category;
+
+                  return (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`absolute w-16 h-16 -translate-x-1/2 -translate-y-1/2 rounded-full 
+                        flex flex-col items-center justify-center transition-all duration-300
+                        ${isSelected ? "scale-110 z-10" : "scale-100 hover:scale-105"}
+                        ${isSelected ? "bg-primary text-black" : "bg-white/10 text-white"}
+                        transform-gpu`}
+                      style={{
+                        left: "50%",
+                        top: "50%",
+                        transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-5rem)`,
+                      }}
+                    >
+                      <span className="text-2xl transform -rotate-[${angle}deg]">
+                        {categoryIcons[category]}
+                      </span>
+                      <span className="text-xs mt-1 transform -rotate-[${angle}deg]">
+                        {categoryNames[category]}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                {/* 中心装饰 */}
+                <div
+                  className="absolute inset-0 m-auto w-24 h-24 rounded-full bg-white/5 
+                  flex items-center justify-center border-2 border-primary/20"
+                >
+                  <div
+                    className="w-16 h-16 rounded-full bg-primary/10 
+                    flex items-center justify-center border border-primary/30"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-primary/20" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 动作列表 */}
+              {selectedCategory && (
+                <div
+                  className="space-y-2 max-h-48 overflow-y-auto 
+                  bg-black/20 rounded-lg p-4 animate-fade-in"
+                >
+                  <h4 className="text-lg font-cinzel text-primary mb-3 flex items-center">
+                    <span className="mr-2">
+                      {categoryIcons[selectedCategory]}
+                    </span>
+                    {categoryNames[selectedCategory]}
+                  </h4>
+                  {actions[selectedCategory]?.map((action) => (
+                    <button
+                      key={action.id}
+                      onClick={() => handleActionClick(action)}
+                      className="w-full p-3 bg-white/5 hover:bg-white/10 rounded-lg 
+                        text-left transition group flex items-center justify-between"
+                    >
+                      <span className="text-white">{action.name}</span>
+                      {action.duration && (
+                        <span className="text-xs text-gray-400 bg-black/20 px-2 py-1 rounded-full">
+                          {Math.floor(action.duration / 1000)}秒
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 关闭按钮 */}
+              <button
+                onClick={() => {
+                  setShowActionMenu(false);
+                  setSelectedCategory(null);
+                }}
+                className="mt-4 w-full px-4 py-2 bg-white/10 hover:bg-white/20 
+                  rounded-lg text-white transition"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

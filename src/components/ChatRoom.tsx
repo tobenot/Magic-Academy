@@ -12,6 +12,7 @@ import {
   WSUserStatusMessage,
   WSUserListMessage,
   WSUser as OnlineUser,
+  WSInteractionMessage,
 } from "../types/websocket";
 import UserProfileCard from "./UserProfile";
 
@@ -19,8 +20,14 @@ interface Message {
   username: string;
   content: string;
   timestamp: number;
-  type: "chat" | "system" | "history";
+  type: "chat" | "system" | "history" | "interaction";
   messages?: Message[];
+  actionId?: string;
+  status?: "active" | "completed";
+  duration?: number;
+  initiatorId?: number;
+  targetId?: number;
+  targetName?: string;
 }
 
 const ChatRoom = (): JSX.Element => {
@@ -89,6 +96,26 @@ const ChatRoom = (): JSX.Element => {
     }
   }, []);
 
+  // 添加交互消息处理
+  const handleInteractionMessage = useCallback(
+    (message: WSInteractionMessage) => {
+      const interactionMessage: Message = {
+        type: "interaction",
+        username: message.data.initiatorName,
+        content: message.data.message,
+        timestamp: message.timestamp,
+        actionId: message.data.actionId,
+        status: message.data.status,
+        duration: message.data.duration,
+        initiatorId: message.data.initiatorId,
+        targetId: message.data.targetId,
+        targetName: message.data.targetName,
+      };
+      setMessages((prev) => [...prev, interactionMessage]);
+    },
+    [],
+  );
+
   // WebSocket 连接和事件处理
   useEffect(() => {
     const checkAuth = async () => {
@@ -129,6 +156,9 @@ const ChatRoom = (): JSX.Element => {
             fetchOnlineUsers();
           });
 
+          // 添加交互消息监听
+          ws.on("interaction_update", handleInteractionMessage);
+
           ws.connect();
 
           return () => {
@@ -140,6 +170,7 @@ const ChatRoom = (): JSX.Element => {
             ws.off("user_offline", handleUserOffline);
             ws.off("user_list_update", handleUserListUpdate);
             ws.off("request_online_users", fetchOnlineUsers);
+            ws.off("interaction_update", handleInteractionMessage);
           };
         } else {
           console.error("Invalid user data:", user);
@@ -158,6 +189,7 @@ const ChatRoom = (): JSX.Element => {
     handleDisconnect,
     handleError,
     fetchOnlineUsers,
+    handleInteractionMessage,
   ]);
 
   // 更新页面标题
@@ -207,6 +239,82 @@ const ChatRoom = (): JSX.Element => {
     setOnlineUsers(event.data.users);
   }, []);
 
+  // 修改消息渲染部分
+  const renderMessage = (msg: Message) => {
+    switch (msg.type) {
+      case "interaction":
+        return (
+          <div
+            className={`message m-2 p-2 rounded transition-all ${
+              msg.status === "active"
+                ? msg.duration
+                  ? "bg-primary/10 border border-primary/20" // 持续性动作开始
+                  : "bg-white/5" // 即时动作
+                : "bg-white/5 opacity-75" // 动作结束
+            }`}
+          >
+            {/* 用户名 */}
+            <span
+              className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
+              onClick={() => {
+                if (msg.initiatorId) setSelectedUserId(msg.initiatorId);
+              }}
+            >
+              {msg.username}
+            </span>
+
+            {/* 消息内容 */}
+            <span className="content text-white">{msg.content}</span>
+
+            {/* 持续性动作的进度条 */}
+            {msg.duration && msg.status === "active" && (
+              <div className="mt-2 h-1 bg-white/10 rounded overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-1000"
+                  style={{
+                    width: "100%",
+                    animation: `progress ${msg.duration}ms linear`,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* 时间戳 */}
+            <span className="text-xs text-gray-500 ml-2">
+              {new Date(msg.timestamp).toLocaleTimeString()}
+            </span>
+          </div>
+        );
+
+      default:
+        return (
+          <div
+            className={`message m-2 p-2 rounded ${
+              msg.type === "system"
+                ? "bg-gray-700/50 text-gray-300"
+                : "bg-white/5"
+            }`}
+          >
+            <span
+              className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
+              onClick={() => {
+                const userId = onlineUsers.find(
+                  (u) => u.username === msg.username,
+                )?.id;
+                if (userId) setSelectedUserId(userId);
+              }}
+            >
+              {msg.username}
+            </span>
+            <span className="content text-white">{msg.content}</span>
+            <span className="text-xs text-gray-500 ml-2">
+              {new Date(msg.timestamp).toLocaleTimeString()}
+            </span>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
       {!connected && (
@@ -242,30 +350,7 @@ const ChatRoom = (): JSX.Element => {
 
           <div className="chat-messages flex-1 overflow-y-auto mb-5 p-3 bg-white/10 rounded-lg">
             {messages.map((msg: Message, index: number) => (
-              <div
-                key={index}
-                className={`message m-2 p-2 rounded ${
-                  msg.type === "system"
-                    ? "bg-gray-700/50 text-gray-300"
-                    : "bg-white/5"
-                }`}
-              >
-                <span
-                  className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
-                  onClick={() => {
-                    const userId = onlineUsers.find(
-                      (u) => u.username === msg.username,
-                    )?.id;
-                    if (userId) setSelectedUserId(userId);
-                  }}
-                >
-                  {msg.username}
-                </span>
-                <span className="content text-white">{msg.content}</span>
-                <span className="text-xs text-gray-500 ml-2">
-                  {new Date(msg.timestamp).toLocaleTimeString()}
-                </span>
-              </div>
+              <div key={index}>{renderMessage(msg)}</div>
             ))}
           </div>
 

@@ -21,6 +21,10 @@ export enum WSMessageType {
   // 聊天消息
   CHAT = "chat",
   HISTORY = "history",
+
+  // 交互消息
+  INTERACTION_START = "interaction_start",
+  INTERACTION_UPDATE = "interaction_update",
 }
 
 // 3. 用户信息类型
@@ -85,14 +89,41 @@ export interface WSUserListMessage extends BaseWSMessage {
   online_count: number;
 }
 
-// 10. 服务端消息联合类型
+// 10. 交互消息数据结构
+export interface WSInteractionData {
+  actionId: string;
+  initiatorId: number;
+  targetId: number;
+  duration?: number;
+  status: "active" | "completed";
+  initiatorName: string;
+  targetName: string;
+  message: string;
+}
+
+// 11. 交互消息类型
+export interface WSInteractionMessage extends BaseWSMessage {
+  type: WSMessageType.INTERACTION_UPDATE;
+  data: WSInteractionData;
+}
+
+// 12. 交互开始消息类型
+export interface WSInteractionStartMessage extends BaseWSMessage {
+  type: WSMessageType.INTERACTION_START;
+  actionId: string;
+  targetId: number;
+}
+
+// 13. 服务端消息联合类型
 export type WSServerMessage =
   | WSSystemMessage
   | WSErrorMessage
   | WSUserStatusMessage
   | WSUserListMessage
   | WSChatMessage
-  | WSHistoryMessage;
+  | WSHistoryMessage
+  | WSInteractionMessage
+  | WSInteractionStartMessage;
 
-// 11. 客户端消息类型
+// 14. 客户端消息类型
 export type WSClientMessage = WSSystemMessage | WSChatMessage;
