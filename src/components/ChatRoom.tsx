@@ -13,6 +13,7 @@ import {
   WSUserListMessage,
   WSUser as OnlineUser,
 } from "../types/websocket";
+import UserProfileCard from "./UserProfile";
 
 interface Message {
   username: string;
@@ -30,6 +31,7 @@ const ChatRoom = (): JSX.Element => {
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
   const authService = new AuthService();
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // 使用 useCallback 包装消息处理函数
   const handleMessage = useCallback((message: Message) => {
@@ -223,7 +225,8 @@ const ChatRoom = (): JSX.Element => {
             {onlineUsers.map((user) => (
               <div
                 key={user.id}
-                className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition"
+                className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer"
+                onClick={() => setSelectedUserId(user.id)}
               >
                 {user.username}
               </div>
@@ -247,7 +250,15 @@ const ChatRoom = (): JSX.Element => {
                     : "bg-white/5"
                 }`}
               >
-                <span className="username text-primary font-bold mr-2">
+                <span
+                  className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
+                  onClick={() => {
+                    const userId = onlineUsers.find(
+                      (u) => u.username === msg.username,
+                    )?.id;
+                    if (userId) setSelectedUserId(userId);
+                  }}
+                >
                   {msg.username}
                 </span>
                 <span className="content text-white">{msg.content}</span>
@@ -278,6 +289,13 @@ const ChatRoom = (): JSX.Element => {
           </div>
         </div>
       </div>
+
+      {selectedUserId && (
+        <UserProfileCard
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+        />
+      )}
     </div>
   );
 };
