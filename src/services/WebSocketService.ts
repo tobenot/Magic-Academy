@@ -1,27 +1,9 @@
 import { EventEmitter } from "./EventEmitter";
 import {
   WSServerMessage,
-  WSChatMessage,
-  WSSystemMessage,
-  WSErrorMessage,
-  WSHistoryMessage,
-  WSUserStatusMessage,
-  WSUserListMessage,
-  WSInteractionMessage,
+  WSMessageType,
+  WSClientMessage,
 } from "../types/websocket";
-
-export enum WSMessageType {
-  USER_ONLINE = "user_online",
-  USER_OFFLINE = "user_offline",
-  USER_LIST_UPDATE = "user_list_update",
-  CHAT = "chat",
-  HISTORY = "history",
-  ERROR = "error",
-  CONNECT = "connect",
-  DISCONNECT = "disconnect",
-  INTERACTION_UPDATE = "interaction",
-  HEARTBEAT = "heartbeat",
-}
 
 export class WebSocketService extends EventEmitter {
   private ws: WebSocket | null = null;
@@ -32,7 +14,6 @@ export class WebSocketService extends EventEmitter {
   private isConnecting = false;
   private heartbeatInterval: number | null = null;
   private readonly HEARTBEAT_INTERVAL = 30000;
-  private messageSequence = 0;
 
   private constructor() {
     super();
@@ -125,42 +106,23 @@ export class WebSocketService extends EventEmitter {
       const message = JSON.parse(event.data) as WSServerMessage;
       console.log("[WebSocket] 收到消息:", message);
 
+      this.emit("message", message);
+
       switch (message.type) {
-        case "user_online":
-        case "user_offline":
-          this.emit("user_status", message as unknown as WSUserStatusMessage);
+        case WSMessageType.USER_ONLINE:
+        case WSMessageType.USER_OFFLINE:
+        case WSMessageType.USER_LIST_UPDATE:
+        case WSMessageType.CONNECT:
+        case WSMessageType.DISCONNECT:
+          this.emit(message.type, message);
           break;
-        case "user_list_update":
-          this.emit("user_list", message as unknown as WSUserListMessage);
+        case WSMessageType.ERROR:
+          this.handleError(message);
           break;
-        case "chat":
-          this.emit("message", message as unknown as WSChatMessage);
+        case WSMessageType.INTERACTION:
+          this.emit("interaction_update", message);
           break;
-        case "history":
-          this.emit("message", message as unknown as WSHistoryMessage);
-          break;
-        case "error":
-          this.handleError(message as unknown as WSErrorMessage);
-          break;
-        case "connect":
-        case "disconnect":
-          this.handleSystemMessage(message as WSSystemMessage);
-          break;
-        case "interaction":
-          const interactionMessage = message as unknown as WSInteractionMessage;
-          this.emit("interaction_update", interactionMessage);
-          this.emit("message", {
-            type: "interaction",
-            content: interactionMessage.data.message,
-            timestamp: interactionMessage.timestamp,
-            actionId: interactionMessage.data.actionId,
-            status: interactionMessage.data.status,
-            duration: interactionMessage.data.duration,
-            initiatorId: interactionMessage.data.initiatorId,
-            targetId: interactionMessage.data.targetId,
-            initiatorName: interactionMessage.data.initiatorName,
-            targetName: interactionMessage.data.targetName,
-          });
+        case WSMessageType.HEARTBEAT:
           break;
         default:
           console.warn("[WebSocket] 未知消息类型:", message);
@@ -170,28 +132,21 @@ export class WebSocketService extends EventEmitter {
     }
   }
 
-  private handleError(error: WSErrorMessage): void {
+  private handleError(error: WSServerMessage): void {
     console.error(
-      `[WebSocket] 错误: ${error.code} - ${error.message}`,
-      error.details,
+      `[WebSocket] 错误: ${error.data.code} - ${error.data.message}`,
+      error.data.details,
     );
     this.emit("error", error);
   }
 
-  private handleSystemMessage(message: WSSystemMessage): void {
-    if (message.type === "disconnect" && message.data?.reconnectDelay) {
-      setTimeout(() => this.connect(), message.data.reconnectDelay);
-    }
-    this.emit(message.type, message);
-  }
-
   public sendMessage(content: string): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      const message = {
+      const message: WSClientMessage = {
         type: WSMessageType.CHAT,
+        timestamp: Date.now(),
         data: {
           content,
-          timestamp: Date.now(),
         },
       };
       console.log("[WebSocket] 发送消息:", message);
@@ -207,6 +162,15 @@ export class WebSocketService extends EventEmitter {
   ): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) {
       try {
+        const message: WSClientMessage = {
+          type: WSMessageType.INTERACTION,
+          timestamp: Date.now(),
+          data: {
+            actionId,
+            targetId,
+          },
+        };
+
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/interaction/perform`,
           {
@@ -215,7 +179,7 @@ export class WebSocketService extends EventEmitter {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ actionId, targetId }),
+            body: JSON.stringify(message.data),
           },
         );
 
@@ -235,10 +199,10 @@ export class WebSocketService extends EventEmitter {
 
   private sendHeartbeat(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      const heartbeat = {
-        type: "heartbeat" as const,
+      const heartbeat: WSClientMessage = {
+        type: WSMessageType.HEARTBEAT,
         timestamp: Date.now(),
-        sequence: ++this.messageSequence,
+        data: {},
       };
       this.ws.send(JSON.stringify(heartbeat));
     }

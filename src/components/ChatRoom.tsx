@@ -1,5 +1,6 @@
 import {
   useState,
+  useMemo,
   ChangeEvent,
   KeyboardEvent,
   useEffect,
@@ -9,22 +10,20 @@ import { WebSocketService } from "../services/WebSocketService";
 import { AuthService } from "../services/AuthService";
 import {
   WSMessageType,
-  WSUserStatusMessage,
-  WSUserListMessage,
-  WSUser as OnlineUser,
-  WSInteractionMessage,
+  WSUser,
   WSServerMessage,
+  WSMessageData,
 } from "../types/websocket";
 import UserProfileCard from "./UserProfile";
 import classNames from "classnames";
 
 interface Message {
-  type: "chat" | "system" | "interaction";
+  type: WSMessageData["type"];
   username: string;
   content: string;
   timestamp: number;
   actionId?: string;
-  status?: "active" | "completed" | "instant";
+  status?: WSMessageData["status"];
   duration?: number;
   initiatorId?: number;
   targetId?: number;
@@ -37,8 +36,11 @@ const ChatRoom = (): JSX.Element => {
   const [connected, setConnected] = useState(false);
   const [username, setUsername] = useState<string>("");
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
-  const authService = new AuthService();
-  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+
+  // 使用 useMemo 保持 AuthService 实例稳定
+  const authService = useMemo(() => new AuthService(), []);
+
+  const [onlineUsers, setOnlineUsers] = useState<WSUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // 处理消息发送
@@ -48,36 +50,33 @@ const ChatRoom = (): JSX.Element => {
     setInputMessage("");
   }, [inputMessage, wsService]);
 
-  // 修改消息处理函数，使用统一的 message.data.message 作为显示文本
+  // 修改消息处理函数
   const handleMessage = useCallback((message: WSServerMessage) => {
-    switch (message.data.type) {
-      case "chat":
+    switch (message.type) {
+      case WSMessageType.CHAT:
         setMessages((prev) => [
           ...prev,
           {
-            type: "chat",
-            username: message.data.initiatorName,
-            content: message.data.message, // 使用统一的 message 字段
+            type: message.data.type,
+            username: message.data.initiatorName || "未知用户",
+            content: message.data.message,
             timestamp: message.timestamp,
             initiatorId: message.data.initiatorId,
           },
         ]);
         break;
 
-      case "interaction":
+      case WSMessageType.INTERACTION:
         setMessages((prev) => [
           ...prev,
           {
-            type: "interaction",
-            username: message.data.initiatorName,
+            type: message.data.type,
+            username: message.data.initiatorName || "未知用户",
             content: message.data.message,
             timestamp: message.timestamp,
             actionId: message.data.actionId,
             status: message.data.status,
-            duration:
-              message.data.duration && message.data.duration > 0
-                ? message.data.duration
-                : undefined,
+            duration: message.data.duration,
             initiatorId: message.data.initiatorId,
             targetId: message.data.targetId,
             targetName: message.data.targetName,
@@ -85,13 +84,13 @@ const ChatRoom = (): JSX.Element => {
         ]);
         break;
 
-      case "system":
+      case WSMessageType.SYSTEM:
         setMessages((prev) => [
           ...prev,
           {
             type: "system",
             username: "System",
-            content: message.data.message, // 使用统一的 message 字段
+            content: message.data.message,
             timestamp: message.timestamp,
           },
         ]);
@@ -129,38 +128,67 @@ const ChatRoom = (): JSX.Element => {
     [sendMessage],
   );
 
-  // 将 fetchOnlineUsers 的声明移到最前面
+  // 定义获取在线用户列表的函数
   const fetchOnlineUsers = useCallback(async () => {
     try {
       const users = await authService.getOnlineUsers();
-      setOnlineUsers(users);
+      // 注意：getOnlineUsers接口返回的对象目前只包含 id 和 username，
+      // 为避免 TS 错误，这里为缺失的字段直接赋默认值，
+      // 请与后端确认是否需要返回status和lastActive字段。
+      const transformed: WSUser[] = (
+        users as Array<{ id: number; username: string }>
+      ).map((user) => ({
+        id: user.id,
+        username: user.username,
+        status: "online", // 默认赋值
+        lastActive: Date.now(), // 默认赋值
+      }));
+      setOnlineUsers(transformed);
     } catch (error) {
       console.error("获取在线用户列表失败:", error);
     }
+  }, [authService]);
+
+  // 用户上线处理函数
+  const handleUserOnline = useCallback((event: WSServerMessage) => {
+    if (event.type !== WSMessageType.USER_ONLINE) return;
+
+    setOnlineUsers((prev) => {
+      const exists = prev.some((user) => user.id === event.data.initiatorId);
+      if (!exists && event.data.initiatorId && event.data.initiatorName) {
+        return [
+          ...prev,
+          {
+            id: event.data.initiatorId,
+            username: event.data.initiatorName,
+            status: "online",
+            lastActive: event.timestamp,
+          },
+        ];
+      }
+      return prev;
+    });
   }, []);
 
-  // 添加交互消息处理
-  const handleInteractionMessage = useCallback(
-    (message: WSInteractionMessage) => {
-      const interactionMessage: Message = {
-        type: "interaction",
-        username: message.data.initiatorName,
-        content: message.data.message,
-        timestamp: message.timestamp,
-        actionId: message.data.actionId,
-        status: message.data.status,
-        duration:
-          message.data.duration && message.data.duration > 0
-            ? message.data.duration
-            : undefined,
-        initiatorId: message.data.initiatorId,
-        targetId: message.data.targetId,
-        targetName: message.data.targetName,
-      };
-      setMessages((prev) => [...prev, interactionMessage]);
-    },
-    [],
-  );
+  // 用户下线处理函数
+  const handleUserOffline = useCallback((event: WSServerMessage) => {
+    if (event.type !== WSMessageType.USER_OFFLINE) return;
+    setOnlineUsers((prev) =>
+      prev.filter((user) => user.id !== event.data.initiatorId),
+    );
+  }, []);
+
+  // 用户列表更新处理函数，转换用户数据
+  const handleUserListUpdate = useCallback((event: WSServerMessage) => {
+    if (event.type !== WSMessageType.USER_LIST_UPDATE || !event.data.users)
+      return;
+    const updatedUsers: WSUser[] = event.data.users.map((user) => ({
+      ...user,
+      status: user.status || "online",
+      lastActive: user.lastActive || event.timestamp,
+    }));
+    setOnlineUsers(updatedUsers);
+  }, []);
 
   // WebSocket 连接和事件处理
   useEffect(() => {
@@ -192,18 +220,15 @@ const ChatRoom = (): JSX.Element => {
           ws.on("error", handleError);
 
           // 添加用户状态事件监听
-          ws.on("user_online", handleUserOnline);
-          ws.on("user_offline", handleUserOffline);
-          ws.on("user_list_update", handleUserListUpdate);
+          ws.on(WSMessageType.USER_ONLINE, handleUserOnline);
+          ws.on(WSMessageType.USER_OFFLINE, handleUserOffline);
+          ws.on(WSMessageType.USER_LIST_UPDATE, handleUserListUpdate);
 
           // 添加请求在线用户列表的处理
           ws.on("request_online_users", () => {
             console.log("[WebSocket] 连接成功,获取在线用户列表");
             fetchOnlineUsers();
           });
-
-          // 添加交互消息监听
-          ws.on("interaction_update", handleInteractionMessage);
 
           ws.connect();
 
@@ -212,11 +237,10 @@ const ChatRoom = (): JSX.Element => {
             ws.off("connected", handleConnected);
             ws.off("disconnect", handleDisconnect);
             ws.off("error", handleError);
-            ws.off("user_online", handleUserOnline);
-            ws.off("user_offline", handleUserOffline);
-            ws.off("user_list_update", handleUserListUpdate);
+            ws.off(WSMessageType.USER_ONLINE, handleUserOnline);
+            ws.off(WSMessageType.USER_OFFLINE, handleUserOffline);
+            ws.off(WSMessageType.USER_LIST_UPDATE, handleUserListUpdate);
             ws.off("request_online_users", fetchOnlineUsers);
-            ws.off("interaction_update", handleInteractionMessage);
           };
         } else {
           console.error("Invalid user data:", user);
@@ -235,7 +259,9 @@ const ChatRoom = (): JSX.Element => {
     handleDisconnect,
     handleError,
     fetchOnlineUsers,
-    handleInteractionMessage,
+    handleUserOnline,
+    handleUserOffline,
+    handleUserListUpdate,
   ]);
 
   // 更新页面标题
@@ -254,36 +280,6 @@ const ChatRoom = (): JSX.Element => {
 
     return () => clearInterval(interval);
   }, [fetchOnlineUsers]);
-
-  // 更新事件处理函数
-  const handleUserOnline = useCallback((event: WSUserStatusMessage) => {
-    if (event.type !== WSMessageType.USER_ONLINE) return;
-
-    setOnlineUsers((prev) => {
-      const exists = prev.some((user) => user.id === event.data.id);
-      if (!exists) {
-        return [
-          ...prev,
-          {
-            id: event.data.id,
-            username: event.data.username,
-          },
-        ];
-      }
-      return prev;
-    });
-  }, []);
-
-  const handleUserOffline = useCallback((event: WSUserStatusMessage) => {
-    if (event.type !== WSMessageType.USER_OFFLINE) return;
-
-    setOnlineUsers((prev) => prev.filter((user) => user.id !== event.data.id));
-  }, []);
-
-  const handleUserListUpdate = useCallback((event: WSUserListMessage) => {
-    if (event.type !== WSMessageType.USER_LIST_UPDATE) return;
-    setOnlineUsers(event.data.users);
-  }, []);
 
   // 修改消息渲染部分
   const renderMessage = (msg: Message) => {
