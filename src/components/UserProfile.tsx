@@ -31,8 +31,8 @@ interface InteractionAction {
   needsEndMessage?: boolean;
   duration?: number | null;
   persistent: boolean;
-  initiatorId: string;
-  targetId: string;
+  initiatorId: number;
+  targetId: number;
 }
 
 // 修改动作分类类型
@@ -257,20 +257,6 @@ const UserProfileCard = ({
       }
     },
     [userId, wsService, onClose],
-  );
-
-  // 新增取消持久性动作的处理函数
-  const handleCancelAction = useCallback(
-    async (action: InteractionAction) => {
-      if (!wsService) return;
-      try {
-        await wsService.cancelInteraction(action.id, action.targetId);
-        setCurrentActions(currentActions.filter((a) => a.id !== action.id));
-      } catch (err) {
-        console.error("取消动作失败:", err);
-      }
-    },
-    [userId, wsService, currentActions, setCurrentActions],
   );
 
   // 新增取消指定动作的处理函数
