@@ -54,11 +54,13 @@ const categoryNames: Record<ActionCategory, string> = {
 interface InteractionMenuProps {
   userId: number;
   onClose: () => void;
+  onActionSuccess?: () => void;
 }
 
 const InteractionMenu = ({
   userId,
   onClose,
+  onActionSuccess,
 }: InteractionMenuProps): JSX.Element => {
   const [actions, setActions] = useState<ActionsByCategory>({});
   const [selectedCategory, setSelectedCategory] =
@@ -164,20 +166,28 @@ const InteractionMenu = ({
             action.needsTarget ? userId : undefined,
           );
           setCurrentActions((prev) => [...prev, action]);
-          onClose();
+          if (onActionSuccess) {
+            onActionSuccess();
+          } else {
+            onClose();
+          }
         } else {
           // 非持续动作：直接关闭弹窗
           await wsService.sendInteraction(
             action.id,
             action.needsTarget ? userId : undefined,
           );
-          onClose();
+          if (onActionSuccess) {
+            onActionSuccess();
+          } else {
+            onClose();
+          }
         }
       } catch (err) {
         console.error("执行动作失败:", err);
       }
     },
-    [userId, wsService, onClose],
+    [userId, wsService, onClose, onActionSuccess],
   );
 
   const handleCancelSpecificAction = useCallback(

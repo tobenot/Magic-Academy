@@ -258,6 +258,10 @@ const UserProfileCard = ({
           <InteractionMenu
             userId={userId}
             onClose={() => setShowInteractionMenu(false)}
+            onActionSuccess={() => {
+              setShowInteractionMenu(false);
+              onClose();
+            }}
           />
         )}
       </div>
