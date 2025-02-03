@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AvatarMapping } from "../config/avatarMapping";
 import { AvatarCustomization } from "../types/avatar";
 import { ColorMapping } from "../config/colorMapping";
@@ -72,39 +72,6 @@ const sections: { title: string; key: string; fields: FieldDefinition[] }[] = [
   },
 ];
 
-// 新增：更新颜色的辅助函数
-const handleColorChange = (
-  sectionKey: string,
-  fieldKey: string,
-  color: string,
-) => {
-  setAppearance((prev) => {
-    const sectionValue = (prev as any)[sectionKey] || {};
-    const currentValue = sectionValue[fieldKey];
-    if (typeof currentValue === "object" && currentValue !== null) {
-      return {
-        ...prev,
-        [sectionKey]: {
-          ...sectionValue,
-          [fieldKey]: {
-            ...currentValue,
-            color: color,
-          },
-        },
-      };
-    } else {
-      // 如果之前为字符串或未设置，则转换为对象格式
-      return {
-        ...prev,
-        [sectionKey]: {
-          ...sectionValue,
-          [fieldKey]: { id: currentValue || "", color: color },
-        },
-      };
-    }
-  });
-};
-
 const AvatarEditor: React.FC<AvatarEditorProps> = ({
   initialAppearance,
   onSave,
@@ -121,6 +88,44 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
   );
   // 新增生成中状态
   const [generating, setGenerating] = useState<boolean>(false);
+
+  // 新增：在每次 appearance 状态变化时打日志
+  useEffect(() => {
+    console.log("appearance state changed:", appearance);
+  }, [appearance]);
+
+  // 新增：更新颜色的辅助函数（放在组件内部，以便使用 setAppearance）
+  const handleColorChange = (
+    sectionKey: string,
+    fieldKey: string,
+    color: string,
+  ) => {
+    setAppearance((prev: AvatarAppearance) => {
+      const sectionValue = (prev as any)[sectionKey] || {};
+      const currentValue = sectionValue[fieldKey];
+      if (typeof currentValue === "object" && currentValue !== null) {
+        return {
+          ...prev,
+          [sectionKey]: {
+            ...sectionValue,
+            [fieldKey]: {
+              ...currentValue,
+              color: color,
+            },
+          },
+        };
+      } else {
+        // 如果之前为字符串或未设置，则转换为对象格式
+        return {
+          ...prev,
+          [sectionKey]: {
+            ...sectionValue,
+            [fieldKey]: { id: currentValue || "", color: color },
+          },
+        };
+      }
+    });
+  };
 
   // 新增：调用后端接口生成立绘
   const handleGenerateAvatar = async () => {
@@ -155,11 +160,14 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("保存前的 appearance:", appearance); // 保存前打日志
     setSaving(true);
     setError(null);
     try {
       await onSave(appearance);
+      console.log("保存成功，提交的数据为:", appearance); // 成功后打日志
     } catch (err: any) {
+      console.error("保存失败:", err);
       setError(err instanceof Error ? err.message : "未知错误");
     } finally {
       setSaving(false);
@@ -174,13 +182,29 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
     if (sectionKey === "tags") {
       setAppearance((prev) => ({ ...prev, tags: value as string[] }));
     } else {
-      setAppearance((prev) => ({
-        ...prev,
-        [sectionKey]: {
-          ...(prev as any)[sectionKey],
-          [fieldKey]: value,
-        },
-      }));
+      setAppearance((prev) => {
+        const currentValue = (prev as any)[sectionKey]?.[fieldKey];
+        // 如果当前字段已经是对象（带有 color 属性），则只更新 id，保留原有的 color
+        if (typeof currentValue === "object" && currentValue !== null) {
+          return {
+            ...prev,
+            [sectionKey]: {
+              ...(prev as any)[sectionKey],
+              [fieldKey]: {
+                id: value,
+                color: currentValue.color,
+              },
+            },
+          };
+        }
+        return {
+          ...prev,
+          [sectionKey]: {
+            ...(prev as any)[sectionKey],
+            [fieldKey]: value,
+          },
+        };
+      });
     }
   };
 
@@ -233,7 +257,15 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                       <>
                         <select
                           value={
-                            (appearance as any)[section.key]?.[field.key] || ""
+                            // 如果状态为对象，则提取 id，否则直接使用字符串
+                            typeof (appearance as any)[section.key]?.[
+                              field.key
+                            ] === "object" &&
+                            (appearance as any)[section.key]?.[field.key] !==
+                              null
+                              ? (appearance as any)[section.key][field.key].id
+                              : (appearance as any)[section.key]?.[field.key] ||
+                                ""
                           }
                           onChange={(e) =>
                             handleChange(section.key, field.key, e.target.value)

@@ -31,8 +31,8 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
         const response = await fetch(`${apiUrl}/avatar/${userId}`);
         const data = await response.json();
         if (data.success) {
-          // 假设后端返回数据结构中 avatarCustomization 包含 appearance 字段
-          setAppearance(data.data.avatarCustomization.appearance);
+          // 后端返回的是结构化的 avatarCustomization 对象，直接保存整个对象
+          setAppearance(data.data.avatarCustomization);
         } else {
           throw new Error(data.message || "获取立绘数据失败");
         }
@@ -52,15 +52,13 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       const response = await fetch(`${apiUrl}/avatar/${userId}`, {
-        method: "PUT", // 可根据实际情况使用 PUT 或 PATCH 方法
+        method: "PUT", // 使用 PUT 方法更新数据
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
-          avatarCustomization: {
-            appearance: newAppearance,
-          },
+          avatarCustomization: newAppearance,
         }),
       });
 
