@@ -122,6 +122,9 @@ export class WebSocketService extends EventEmitter {
         case WSMessageType.INTERACTION:
           this.emit("interaction_update", message);
           break;
+        case WSMessageType.AVATAR_UPDATE:
+          this.emit("avatar_update", message);
+          break;
         case WSMessageType.HEARTBEAT:
           break;
         default:

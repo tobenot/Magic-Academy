@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import AvatarEditorContainer from "./AvatarEditorContainer";
 import { UserProfile } from "../types/profile";
 import { formatDistance } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -33,6 +34,10 @@ const UserProfileCard = ({
   const [error, setError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showInteractionMenu, setShowInteractionMenu] = useState(false);
+  const [showAvatarEditor, setShowAvatarEditor] = useState(false);
+
+  const currentUserId = Number(localStorage.getItem("userId") || "0");
+  const isOwnProfile = currentUserId === userId;
 
   const assetLoader = AssetLoader.getInstance();
   const getCardImagePath = (cardId: string): string => {
@@ -239,6 +244,16 @@ const UserProfileCard = ({
           </button>
         </div>
 
+        {/* 新增：修改外观按钮，只在自己的用户资料中显示 */}
+        {isOwnProfile && (
+          <button
+            onClick={() => setShowAvatarEditor(true)}
+            className="absolute bottom-6 left-6 px-4 py-2 bg-primary hover:bg-secondary text-black rounded-full transition"
+          >
+            修改外观
+          </button>
+        )}
+
         {showInteractionMenu && (
           <InteractionMenu
             userId={userId}
@@ -246,6 +261,11 @@ const UserProfileCard = ({
           />
         )}
       </div>
+
+      {/* 新增：条件渲染 AvatarEditorContainer 作为模态框 */}
+      {showAvatarEditor && (
+        <AvatarEditorContainer onClose={() => setShowAvatarEditor(false)} />
+      )}
     </div>
   );
 };

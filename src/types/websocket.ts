@@ -24,6 +24,9 @@ export enum WSMessageType {
   SYSTEM = "system",
   INTERACTION = "interaction",
 
+  // 新增：立绘更新消息类型
+  AVATAR_UPDATE = "avatar_update",
+
   // 新增的历史聊天消息类型（使用小写值与后端一致）
   CHAT_HISTORY = "chat_history",
 }
