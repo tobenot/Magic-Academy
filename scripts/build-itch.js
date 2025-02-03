@@ -75,7 +75,14 @@ function createZip(version) {
     });
 
     archive.pipe(output);
-    archive.directory(path.join(__dirname, "../dist"), false);
+
+    // 修改点：使用 glob 方法归档，并在 ignore 中排除刚生成的 ZIP 文件
+    const sourceDir = path.join(__dirname, "../dist");
+    archive.glob("**/*", {
+      cwd: sourceDir,
+      ignore: [zipName],
+    });
+
     archive.finalize();
   });
 }
