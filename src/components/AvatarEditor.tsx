@@ -154,7 +154,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                           .filter((option) => option.appliesTo === field.key)
                           .map((option) => (
                             <option key={option.id} value={option.id}>
-                              {option.description}
+                              {option.displayname}
                             </option>
                           ))}
                       </select>
@@ -210,7 +210,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                               {isOptional && <option value="">无</option>}
                               {fieldOptions.map((option) => (
                                 <option key={option.id} value={option.id}>
-                                  {option.description}
+                                  {option.displayname}
                                 </option>
                               ))}
                             </>

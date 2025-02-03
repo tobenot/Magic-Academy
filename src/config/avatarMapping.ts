@@ -1,7 +1,7 @@
 export interface AvatarMappingEntry {
   id: string;
   category: "appearance" | "clothing" | "equipment" | "dynamic" | "tag";
-  description: string;
+  displayname: string;
   enGenImage: string;
   zhGenImage: string;
   appliesTo?: string | string[];
@@ -13,7 +13,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_high_tall: {
     id: "app_high_tall",
     category: "appearance",
-    description: "高挑",
+    displayname: "高挑",
     enGenImage: "tall",
     zhGenImage: "高挑",
     appliesTo: "height",
@@ -21,7 +21,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_strong: {
     id: "app_strong",
     category: "appearance",
-    description: "健硕",
+    displayname: "健硕",
     enGenImage: "muscular",
     zhGenImage: "健硕",
     appliesTo: "bodyType",
@@ -29,7 +29,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_medium: {
     id: "app_medium",
     category: "appearance",
-    description: "中等身高",
+    displayname: "中等身高",
     enGenImage: "medium height",
     zhGenImage: "中等身高",
     appliesTo: "height",
@@ -37,7 +37,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_short: {
     id: "app_short",
     category: "appearance",
-    description: "矮小",
+    displayname: "矮小",
     enGenImage: "short",
     zhGenImage: "矮小",
     appliesTo: "height",
@@ -45,7 +45,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_thin: {
     id: "app_thin",
     category: "appearance",
-    description: "瘦弱",
+    displayname: "瘦弱",
     enGenImage: "thin",
     zhGenImage: "瘦弱",
     appliesTo: "bodyType",
@@ -53,7 +53,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_plump: {
     id: "app_plump",
     category: "appearance",
-    description: "丰满",
+    displayname: "丰满",
     enGenImage: "plump",
     zhGenImage: "丰满",
     appliesTo: "bodyType",
@@ -62,7 +62,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   eye_blue: {
     id: "eye_blue",
     category: "appearance",
-    description: "蓝色",
+    displayname: "蓝色",
     enGenImage: "blue",
     zhGenImage: "蓝色",
     appliesTo: "eyeColor",
@@ -70,7 +70,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   het_red_blue: {
     id: "het_red_blue",
     category: "appearance",
-    description: "红蓝异瞳",
+    displayname: "红蓝异瞳",
     enGenImage: "red-blue heterochromia",
     zhGenImage: "红蓝异瞳",
     appliesTo: "heterochromia",
@@ -78,15 +78,15 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_long_curly: {
     id: "hair_long_curly",
     category: "appearance",
-    description: "长卷发",
+    displayname: "长卷发",
     enGenImage: "long curly hair",
     zhGenImage: "长卷发",
-    appliesTo: "hairDescription",
+    appliesTo: "hairdisplayname",
   },
   face_sharp: {
     id: "face_sharp",
     category: "appearance",
-    description: "尖下巴",
+    displayname: "尖下巴",
     enGenImage: "pointed chin",
     zhGenImage: "尖下巴",
     appliesTo: "facialFeatures",
@@ -96,7 +96,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_skin_fair: {
     id: "app_skin_fair",
     category: "appearance",
-    description: "白皙",
+    displayname: "白皙",
     enGenImage: "fair skin",
     zhGenImage: "白皙",
     appliesTo: "skinColor",
@@ -104,7 +104,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_skin_wheat: {
     id: "app_skin_wheat",
     category: "appearance",
-    description: "小麦色",
+    displayname: "小麦色",
     enGenImage: "wheat skin",
     zhGenImage: "小麦色",
     appliesTo: "skinColor",
@@ -112,7 +112,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_skin_olive: {
     id: "app_skin_olive",
     category: "appearance",
-    description: "橄榄皮",
+    displayname: "橄榄皮",
     enGenImage: "olive skin",
     zhGenImage: "橄榄皮",
     appliesTo: "skinColor",
@@ -120,7 +120,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_skin_bronze: {
     id: "app_skin_bronze",
     category: "appearance",
-    description: "古铜色",
+    displayname: "古铜色",
     enGenImage: "bronze skin",
     zhGenImage: "古铜色",
     appliesTo: "skinColor",
@@ -128,7 +128,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_skin_dark_brown: {
     id: "app_skin_dark_brown",
     category: "appearance",
-    description: "深棕肤色",
+    displayname: "深棕肤色",
     enGenImage: "dark brown skin",
     zhGenImage: "深棕肤色",
     appliesTo: "skinColor",
@@ -136,7 +136,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   app_skin_very_dark: {
     id: "app_skin_very_dark",
     category: "appearance",
-    description: "极深肤色",
+    displayname: "极深肤色",
     enGenImage: "very dark skin",
     zhGenImage: "极深肤色",
     appliesTo: "skinColor",
@@ -146,7 +146,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   eye_green: {
     id: "eye_green",
     category: "appearance",
-    description: "绿色",
+    displayname: "绿色",
     enGenImage: "green",
     zhGenImage: "绿色",
     appliesTo: "eyeColor",
@@ -154,7 +154,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   eye_brown: {
     id: "eye_brown",
     category: "appearance",
-    description: "棕色",
+    displayname: "棕色",
     enGenImage: "brown",
     zhGenImage: "棕色",
     appliesTo: "eyeColor",
@@ -162,7 +162,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   eye_gray: {
     id: "eye_gray",
     category: "appearance",
-    description: "灰色",
+    displayname: "灰色",
     enGenImage: "gray",
     zhGenImage: "灰色",
     appliesTo: "eyeColor",
@@ -170,7 +170,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   eye_hazel: {
     id: "eye_hazel",
     category: "appearance",
-    description: "榛子色",
+    displayname: "榛子色",
     enGenImage: "hazel",
     zhGenImage: "榛子色",
     appliesTo: "eyeColor",
@@ -178,7 +178,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   eye_amber: {
     id: "eye_amber",
     category: "appearance",
-    description: "琥珀色",
+    displayname: "琥珀色",
     enGenImage: "amber",
     zhGenImage: "琥珀色",
     appliesTo: "eyeColor",
@@ -188,15 +188,15 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_short_straight: {
     id: "hair_short_straight",
     category: "appearance",
-    description: "短直发",
+    displayname: "短直发",
     enGenImage: "short straight hair",
     zhGenImage: "短直发",
-    appliesTo: "hairDescription",
+    appliesTo: "hairdisplayname",
   },
   face_round: {
     id: "face_round",
     category: "appearance",
-    description: "圆脸",
+    displayname: "圆脸",
     enGenImage: "round face",
     zhGenImage: "圆脸",
     appliesTo: "facialFeatures",
@@ -206,7 +206,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   gender_male: {
     id: "gender_male",
     category: "appearance",
-    description: "男性",
+    displayname: "男性",
     enGenImage: "Male",
     zhGenImage: "男性",
     appliesTo: "gender",
@@ -214,7 +214,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   gender_female: {
     id: "gender_female",
     category: "appearance",
-    description: "女性",
+    displayname: "女性",
     enGenImage: "Female",
     zhGenImage: "女性",
     appliesTo: "gender",
@@ -222,7 +222,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   gender_nonbinary: {
     id: "gender_nonbinary",
     category: "appearance",
-    description: "非二元",
+    displayname: "非二元",
     enGenImage: "Non-binary",
     zhGenImage: "非二元",
     appliesTo: "gender",
@@ -230,7 +230,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   gender_other: {
     id: "gender_other",
     category: "appearance",
-    description: "其他",
+    displayname: "其他",
     enGenImage: "Other",
     zhGenImage: "其他",
     appliesTo: "gender",
@@ -240,41 +240,41 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_medium_wavy: {
     id: "hair_medium_wavy",
     category: "appearance",
-    description: "中长波浪发",
+    displayname: "中长波浪发",
     enGenImage: "medium wavy hair",
     zhGenImage: "中长波浪发",
-    appliesTo: "hairDescription",
+    appliesTo: "hairdisplayname",
   },
   hair_braided: {
     id: "hair_braided",
     category: "appearance",
-    description: "辫子",
+    displayname: "辫子",
     enGenImage: "braided hair",
     zhGenImage: "辫子",
-    appliesTo: "hairDescription",
+    appliesTo: "hairdisplayname",
   },
   hair_afro: {
     id: "hair_afro",
     category: "appearance",
-    description: "蓬松卷发",
+    displayname: "蓬松卷发",
     enGenImage: "afro hair",
     zhGenImage: "蓬松卷发",
-    appliesTo: "hairDescription",
+    appliesTo: "hairdisplayname",
   },
   hair_mohawk: {
     id: "hair_mohawk",
     category: "appearance",
-    description: "莫霍克发型",
+    displayname: "莫霍克发型",
     enGenImage: "mohawk hairstyle",
     zhGenImage: "莫霍克发型",
-    appliesTo: "hairDescription",
+    appliesTo: "hairdisplayname",
   },
 
   // 新增面部特征选项
   face_square: {
     id: "face_square",
     category: "appearance",
-    description: "方脸",
+    displayname: "方脸",
     enGenImage: "square face",
     zhGenImage: "方脸",
     appliesTo: "facialFeatures",
@@ -282,7 +282,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   face_freckles: {
     id: "face_freckles",
     category: "appearance",
-    description: "雀斑",
+    displayname: "雀斑",
     enGenImage: "freckles",
     zhGenImage: "雀斑",
     appliesTo: "facialFeatures",
@@ -292,7 +292,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_color_black: {
     id: "hair_color_black",
     category: "appearance",
-    description: "黑发",
+    displayname: "黑发",
     enGenImage: "black hair",
     zhGenImage: "黑发",
     appliesTo: "hairColor",
@@ -300,7 +300,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_color_blonde: {
     id: "hair_color_blonde",
     category: "appearance",
-    description: "金发",
+    displayname: "金发",
     enGenImage: "blonde hair",
     zhGenImage: "金发",
     appliesTo: "hairColor",
@@ -308,7 +308,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_color_brown: {
     id: "hair_color_brown",
     category: "appearance",
-    description: "棕发",
+    displayname: "棕发",
     enGenImage: "brown hair",
     zhGenImage: "棕发",
     appliesTo: "hairColor",
@@ -316,7 +316,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_color_red: {
     id: "hair_color_red",
     category: "appearance",
-    description: "红发",
+    displayname: "红发",
     enGenImage: "red hair",
     zhGenImage: "红发",
     appliesTo: "hairColor",
@@ -324,7 +324,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   hair_color_gray: {
     id: "hair_color_gray",
     category: "appearance",
-    description: "灰发",
+    displayname: "灰发",
     enGenImage: "gray hair",
     zhGenImage: "灰发",
     appliesTo: "hairColor",
@@ -334,7 +334,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   face_oval: {
     id: "face_oval",
     category: "appearance",
-    description: "瓜子脸",
+    displayname: "瓜子脸",
     enGenImage: "oval face",
     zhGenImage: "瓜子脸",
     appliesTo: "facialFeatures",
@@ -342,7 +342,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   face_heart: {
     id: "face_heart",
     category: "appearance",
-    description: "心形脸",
+    displayname: "心形脸",
     enGenImage: "heart-shaped face",
     zhGenImage: "心形脸",
     appliesTo: "facialFeatures",
@@ -350,7 +350,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   face_prominent_cheekbones: {
     id: "face_prominent_cheekbones",
     category: "appearance",
-    description: "高颧骨",
+    displayname: "高颧骨",
     enGenImage: "prominent cheekbones",
     zhGenImage: "高颧骨",
     appliesTo: "facialFeatures",
@@ -360,7 +360,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_base_whiteT: {
     id: "clothing_base_whiteT",
     category: "clothing",
-    description: "白色T恤",
+    displayname: "白色T恤",
     enGenImage: "white T-shirt",
     zhGenImage: "白色T恤",
     appliesTo: "baseLayer",
@@ -368,7 +368,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_outer_blue: {
     id: "clothing_outer_blue",
     category: "clothing",
-    description: "蓝色牛仔外套",
+    displayname: "蓝色牛仔外套",
     enGenImage: "blue denim jacket",
     zhGenImage: "蓝色牛仔外套",
     appliesTo: "outerLayer",
@@ -376,7 +376,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_accessory_scarf: {
     id: "clothing_accessory_scarf",
     category: "clothing",
-    description: "红色围巾",
+    displayname: "红色围巾",
     enGenImage: "red scarf",
     zhGenImage: "红色围巾",
     appliesTo: "accessory",
@@ -384,7 +384,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_dress_red: {
     id: "clothing_dress_red",
     category: "clothing",
-    description: "红色连衣裙",
+    displayname: "红色连衣裙",
     enGenImage: "red dress",
     zhGenImage: "红色连衣裙",
     appliesTo: "outerLayer",
@@ -392,7 +392,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_formal_suit: {
     id: "clothing_formal_suit",
     category: "clothing",
-    description: "正装西服",
+    displayname: "正装西服",
     enGenImage: "formal suit",
     zhGenImage: "正装西服",
     appliesTo: "outerLayer",
@@ -400,7 +400,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_casual_jacket: {
     id: "clothing_casual_jacket",
     category: "clothing",
-    description: "休闲夹克",
+    displayname: "休闲夹克",
     enGenImage: "casual jacket",
     zhGenImage: "休闲夹克",
     appliesTo: "outerLayer",
@@ -408,7 +408,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_base_blackT: {
     id: "clothing_base_blackT",
     category: "clothing",
-    description: "黑色T恤",
+    displayname: "黑色T恤",
     enGenImage: "black T-shirt",
     zhGenImage: "黑色T恤",
     appliesTo: "baseLayer",
@@ -416,7 +416,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_base_polo: {
     id: "clothing_base_polo",
     category: "clothing",
-    description: "polo衫",
+    displayname: "polo衫",
     enGenImage: "polo shirt",
     zhGenImage: "polo衫",
     appliesTo: "baseLayer",
@@ -424,7 +424,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_dress_evening: {
     id: "clothing_dress_evening",
     category: "clothing",
-    description: "晚礼服",
+    displayname: "晚礼服",
     enGenImage: "evening gown",
     zhGenImage: "晚礼服",
     appliesTo: "outerLayer",
@@ -432,7 +432,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_traditional_hanfu: {
     id: "clothing_traditional_hanfu",
     category: "clothing",
-    description: "汉服",
+    displayname: "汉服",
     enGenImage: "hanfu",
     zhGenImage: "汉服",
     appliesTo: "outerLayer",
@@ -440,7 +440,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_traditional_kimono: {
     id: "clothing_traditional_kimono",
     category: "clothing",
-    description: "和服",
+    displayname: "和服",
     enGenImage: "kimono",
     zhGenImage: "和服",
     appliesTo: "outerLayer",
@@ -448,7 +448,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_top_hoodie: {
     id: "clothing_top_hoodie",
     category: "clothing",
-    description: "连帽衫",
+    displayname: "连帽衫",
     enGenImage: "hoodie",
     zhGenImage: "连帽衫",
     appliesTo: "baseLayer",
@@ -456,7 +456,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_jacket_leather: {
     id: "clothing_jacket_leather",
     category: "clothing",
-    description: "皮夹克",
+    displayname: "皮夹克",
     enGenImage: "leather jacket",
     zhGenImage: "皮夹克",
     appliesTo: "outerLayer",
@@ -464,7 +464,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_trousers_jeans: {
     id: "clothing_trousers_jeans",
     category: "clothing",
-    description: "牛仔裤",
+    displayname: "牛仔裤",
     enGenImage: "jeans",
     zhGenImage: "牛仔裤",
     appliesTo: "baseLayer",
@@ -472,7 +472,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_skirt: {
     id: "clothing_skirt",
     category: "clothing",
-    description: "短裙",
+    displayname: "短裙",
     enGenImage: "skirt",
     zhGenImage: "短裙",
     appliesTo: "baseLayer",
@@ -480,7 +480,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_suit_business: {
     id: "clothing_suit_business",
     category: "clothing",
-    description: "商务西装",
+    displayname: "商务西装",
     enGenImage: "business suit",
     zhGenImage: "商务西装",
     appliesTo: "outerLayer",
@@ -488,7 +488,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_winter_coat: {
     id: "clothing_winter_coat",
     category: "clothing",
-    description: "冬季大衣",
+    displayname: "冬季大衣",
     enGenImage: "winter coat",
     zhGenImage: "冬季大衣",
     appliesTo: "outerLayer",
@@ -496,7 +496,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   clothing_summer_dress: {
     id: "clothing_summer_dress",
     category: "clothing",
-    description: "夏装连衣裙",
+    displayname: "夏装连衣裙",
     enGenImage: "summer dress",
     zhGenImage: "夏装连衣裙",
     appliesTo: "outerLayer",
@@ -506,7 +506,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_head_hat: {
     id: "equip_head_hat",
     category: "equipment",
-    description: "黑色帽子",
+    displayname: "黑色帽子",
     enGenImage: "black hat",
     zhGenImage: "黑色帽子",
     appliesTo: "head",
@@ -514,7 +514,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_body_armor: {
     id: "equip_body_armor",
     category: "equipment",
-    description: "钢铁护甲",
+    displayname: "钢铁护甲",
     enGenImage: "steel armor",
     zhGenImage: "钢铁护甲",
     appliesTo: "body",
@@ -522,7 +522,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_head_glasses: {
     id: "equip_head_glasses",
     category: "equipment",
-    description: "时尚眼镜",
+    displayname: "时尚眼镜",
     enGenImage: "stylish glasses",
     zhGenImage: "时尚眼镜",
     appliesTo: "head",
@@ -530,7 +530,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_accessory_earrings: {
     id: "equip_accessory_earrings",
     category: "equipment",
-    description: "优雅耳环",
+    displayname: "优雅耳环",
     enGenImage: "elegant earrings",
     zhGenImage: "优雅耳环",
     appliesTo: "accessory",
@@ -538,7 +538,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_accessory_necklace: {
     id: "equip_accessory_necklace",
     category: "equipment",
-    description: "项链",
+    displayname: "项链",
     enGenImage: "necklace",
     zhGenImage: "项链",
     appliesTo: "accessory",
@@ -546,7 +546,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_accessory_bracelet: {
     id: "equip_accessory_bracelet",
     category: "equipment",
-    description: "手镯",
+    displayname: "手镯",
     enGenImage: "bracelet",
     zhGenImage: "手镯",
     appliesTo: "accessory",
@@ -554,7 +554,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_accessory_ring: {
     id: "equip_accessory_ring",
     category: "equipment",
-    description: "戒指",
+    displayname: "戒指",
     enGenImage: "ring",
     zhGenImage: "戒指",
     appliesTo: "accessory",
@@ -562,7 +562,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_head_mask: {
     id: "equip_head_mask",
     category: "equipment",
-    description: "口罩",
+    displayname: "口罩",
     enGenImage: "mask",
     zhGenImage: "口罩",
     appliesTo: "head",
@@ -570,7 +570,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_accessory_watch: {
     id: "equip_accessory_watch",
     category: "equipment",
-    description: "手表",
+    displayname: "手表",
     enGenImage: "watch",
     zhGenImage: "手表",
     appliesTo: "accessory",
@@ -578,7 +578,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_accessory_belt: {
     id: "equip_accessory_belt",
     category: "equipment",
-    description: "腰带",
+    displayname: "腰带",
     enGenImage: "belt",
     zhGenImage: "腰带",
     appliesTo: "accessory",
@@ -586,7 +586,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   equip_foot_boots: {
     id: "equip_foot_boots",
     category: "equipment",
-    description: "靴子",
+    displayname: "靴子",
     enGenImage: "boots",
     zhGenImage: "靴子",
     appliesTo: "foot",
@@ -596,7 +596,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_angry: {
     id: "mood_angry",
     category: "dynamic",
-    description: "愤怒",
+    displayname: "愤怒",
     enGenImage: "angry",
     zhGenImage: "愤怒",
     appliesTo: "mood",
@@ -604,7 +604,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   scar_left_face: {
     id: "scar_left_face",
     category: "dynamic",
-    description: "左脸一道刀疤",
+    displayname: "左脸一道刀疤",
     enGenImage: "scar on left face",
     zhGenImage: "左脸一道刀疤",
     appliesTo: "scars",
@@ -612,7 +612,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   faction_shadow: {
     id: "faction_shadow",
     category: "dynamic",
-    description: "暗影联盟",
+    displayname: "暗影联盟",
     enGenImage: "shadow alliance",
     zhGenImage: "暗影联盟",
     appliesTo: "faction",
@@ -620,7 +620,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_happy: {
     id: "mood_happy",
     category: "dynamic",
-    description: "开心",
+    displayname: "开心",
     enGenImage: "happy",
     zhGenImage: "开心",
     appliesTo: "mood",
@@ -628,7 +628,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_sad: {
     id: "mood_sad",
     category: "dynamic",
-    description: "伤心",
+    displayname: "伤心",
     enGenImage: "sad",
     zhGenImage: "伤心",
     appliesTo: "mood",
@@ -636,7 +636,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_winking: {
     id: "mood_winking",
     category: "dynamic",
-    description: "眨眼",
+    displayname: "眨眼",
     enGenImage: "winking",
     zhGenImage: "眨眼",
     appliesTo: "mood",
@@ -644,7 +644,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_confident: {
     id: "mood_confident",
     category: "dynamic",
-    description: "自信",
+    displayname: "自信",
     enGenImage: "confident",
     zhGenImage: "自信",
     appliesTo: "mood",
@@ -652,7 +652,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_thoughtful: {
     id: "mood_thoughtful",
     category: "dynamic",
-    description: "沉思",
+    displayname: "沉思",
     enGenImage: "thoughtful",
     zhGenImage: "沉思",
     appliesTo: "mood",
@@ -660,7 +660,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_surprised: {
     id: "mood_surprised",
     category: "dynamic",
-    description: "惊讶",
+    displayname: "惊讶",
     enGenImage: "surprised",
     zhGenImage: "惊讶",
     appliesTo: "mood",
@@ -668,7 +668,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_smirk: {
     id: "mood_smirk",
     category: "dynamic",
-    description: "得意微笑",
+    displayname: "得意微笑",
     enGenImage: "smirk",
     zhGenImage: "得意微笑",
     appliesTo: "mood",
@@ -676,7 +676,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_confused: {
     id: "mood_confused",
     category: "dynamic",
-    description: "困惑",
+    displayname: "困惑",
     enGenImage: "confused",
     zhGenImage: "困惑",
     appliesTo: "mood",
@@ -684,7 +684,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_relaxed: {
     id: "mood_relaxed",
     category: "dynamic",
-    description: "放松",
+    displayname: "放松",
     enGenImage: "relaxed",
     zhGenImage: "放松",
     appliesTo: "mood",
@@ -692,7 +692,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   mood_anxious: {
     id: "mood_anxious",
     category: "dynamic",
-    description: "焦虑",
+    displayname: "焦虑",
     enGenImage: "anxious",
     zhGenImage: "焦虑",
     appliesTo: "mood",
@@ -700,7 +700,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   pose_running: {
     id: "pose_running",
     category: "dynamic",
-    description: "奔跑",
+    displayname: "奔跑",
     enGenImage: "running",
     zhGenImage: "奔跑",
     appliesTo: "pose",
@@ -708,7 +708,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   pose_jumping: {
     id: "pose_jumping",
     category: "dynamic",
-    description: "跳跃",
+    displayname: "跳跃",
     enGenImage: "jumping",
     zhGenImage: "跳跃",
     appliesTo: "pose",
@@ -716,7 +716,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   pose_sitting: {
     id: "pose_sitting",
     category: "dynamic",
-    description: "坐姿",
+    displayname: "坐姿",
     enGenImage: "sitting",
     zhGenImage: "坐姿",
     appliesTo: "pose",
@@ -726,7 +726,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_cool: {
     id: "tag_cool",
     category: "tag",
-    description: "冷酷",
+    displayname: "冷酷",
     enGenImage: "cool",
     zhGenImage: "冷酷",
     appliesTo: "tags",
@@ -734,7 +734,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_strong: {
     id: "tag_strong",
     category: "tag",
-    description: "坚韧",
+    displayname: "坚韧",
     enGenImage: "tough",
     zhGenImage: "坚韧",
     appliesTo: "tags",
@@ -742,7 +742,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_smart: {
     id: "tag_smart",
     category: "tag",
-    description: "机敏",
+    displayname: "机敏",
     enGenImage: "smart",
     zhGenImage: "机敏",
     appliesTo: "tags",
@@ -750,7 +750,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_elegant: {
     id: "tag_elegant",
     category: "tag",
-    description: "优雅",
+    displayname: "优雅",
     enGenImage: "elegant",
     zhGenImage: "优雅",
     appliesTo: "tags",
@@ -758,7 +758,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_friendly: {
     id: "tag_friendly",
     category: "tag",
-    description: "友好",
+    displayname: "友好",
     enGenImage: "friendly",
     zhGenImage: "友好",
     appliesTo: "tags",
@@ -766,7 +766,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_mysterious: {
     id: "tag_mysterious",
     category: "tag",
-    description: "神秘",
+    displayname: "神秘",
     enGenImage: "mysterious",
     zhGenImage: "神秘",
     appliesTo: "tags",
@@ -774,7 +774,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_adventurous: {
     id: "tag_adventurous",
     category: "tag",
-    description: "爱冒险",
+    displayname: "爱冒险",
     enGenImage: "adventurous",
     zhGenImage: "爱冒险",
     appliesTo: "tags",
@@ -782,7 +782,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_artistic: {
     id: "tag_artistic",
     category: "tag",
-    description: "艺术家",
+    displayname: "艺术家",
     enGenImage: "artistic",
     zhGenImage: "艺术家",
     appliesTo: "tags",
@@ -790,7 +790,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_leader: {
     id: "tag_leader",
     category: "tag",
-    description: "领袖",
+    displayname: "领袖",
     enGenImage: "leader",
     zhGenImage: "领袖",
     appliesTo: "tags",
@@ -798,7 +798,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_romantic: {
     id: "tag_romantic",
     category: "tag",
-    description: "浪漫",
+    displayname: "浪漫",
     enGenImage: "romantic",
     zhGenImage: "浪漫",
     appliesTo: "tags",
@@ -806,7 +806,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_charming: {
     id: "tag_charming",
     category: "tag",
-    description: "迷人",
+    displayname: "迷人",
     enGenImage: "charming",
     zhGenImage: "迷人",
     appliesTo: "tags",
@@ -814,7 +814,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_intellectual: {
     id: "tag_intellectual",
     category: "tag",
-    description: "智慧",
+    displayname: "智慧",
     enGenImage: "intellectual",
     zhGenImage: "智慧",
     appliesTo: "tags",
@@ -822,7 +822,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_humorous: {
     id: "tag_humorous",
     category: "tag",
-    description: "幽默",
+    displayname: "幽默",
     enGenImage: "humorous",
     zhGenImage: "幽默",
     appliesTo: "tags",
@@ -830,7 +830,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_lazy: {
     id: "tag_lazy",
     category: "tag",
-    description: "懒散",
+    displayname: "懒散",
     enGenImage: "lazy",
     zhGenImage: "懒散",
     appliesTo: "tags",
@@ -838,7 +838,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   tag_energetic: {
     id: "tag_energetic",
     category: "tag",
-    description: "活力",
+    displayname: "活力",
     enGenImage: "energetic",
     zhGenImage: "活力",
     appliesTo: "tags",
