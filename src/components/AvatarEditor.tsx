@@ -7,9 +7,9 @@ import { ColorMapping } from "../config/colorMapping";
 export type AvatarAppearance = AvatarCustomization;
 
 interface AvatarEditorProps {
-  // 修改属性名和类型，和容器传入的保持一致
   initialAppearance: AvatarAppearance;
-  onSave: (newAppearance: AvatarAppearance) => Promise<void>;
+  initialImageUrl?: string;
+  onSave: (newAppearance: AvatarAppearance) => Promise<string>; // 返回图片 URL
   onCancel: () => void;
 }
 
@@ -74,6 +74,7 @@ const sections: { title: string; key: string; fields: FieldDefinition[] }[] = [
 
 const AvatarEditor: React.FC<AvatarEditorProps> = ({
   initialAppearance,
+  initialImageUrl,
   onSave,
   onCancel,
 }) => {
@@ -84,7 +85,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
   const [error, setError] = useState<string | null>(null);
   // 用于显示生成的立绘图片 URL 的状态
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
-    null,
+    initialImageUrl || null,
   );
   // 生成中状态
   const [generating, setGenerating] = useState<boolean>(false);
@@ -158,7 +159,9 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
     setSaving(true);
     setError(null);
     try {
-      await onSave(appearance);
+      // 改为获取 onSave 返回的图片 URL
+      const imageUrl = await onSave(appearance);
+      setGeneratedImageUrl(imageUrl);
     } catch (err: any) {
       setError(err instanceof Error ? err.message : "未知错误");
     } finally {
@@ -434,7 +437,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                   onClick={onCancel}
                   className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition"
                 >
-                  取消
+                  关闭
                 </button>
                 <button
                   type="submit"

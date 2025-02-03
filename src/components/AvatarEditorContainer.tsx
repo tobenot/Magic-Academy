@@ -12,6 +12,7 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [appearance, setAppearance] = useState<AvatarAppearance | null>(null);
+  const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(true);
 
@@ -31,8 +32,9 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
         const response = await fetch(`${apiUrl}/avatar/${userId}`);
         const data = await response.json();
         if (data.success) {
-          // 后端返回的是结构化的 avatarCustomization 对象，直接保存整个对象
+          // 保存 avatarCustomization 和 imageUrl，由于 imageUrl 为单独字段，所以单独保存
           setAppearance(data.data.avatarCustomization);
+          setSavedImageUrl(data.data.imageUrl);
         } else {
           throw new Error(data.message || "获取立绘数据失败");
         }
@@ -48,7 +50,9 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
   }, [userId]);
 
   // 编辑器保存回调，保存修改后的外观数据到后端
-  const handleSave = async (newAppearance: AvatarAppearance) => {
+  const handleSave = async (
+    newAppearance: AvatarAppearance,
+  ): Promise<string> => {
     try {
       const apiUrl = import.meta.env.VITE_API_URL;
       const response = await fetch(`${apiUrl}/avatar/${userId}`, {
@@ -64,10 +68,9 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
 
       const result = await response.json();
       if (result.success) {
-        console.log("保存成功");
-        // 保存成功后关闭编辑面板
-        onClose();
-        setIsOpen(false);
+        console.log("保存成功，返回的 imageUrl:", result.imageUrl);
+        // 返回图片 URL，用于更新镜子区域
+        return result.imageUrl;
       } else {
         throw new Error(result.message || "保存失败");
       }
@@ -104,6 +107,7 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
   return appearance ? (
     <AvatarEditor
       initialAppearance={appearance}
+      initialImageUrl={savedImageUrl}
       onSave={handleSave}
       onCancel={handleCancel}
     />
