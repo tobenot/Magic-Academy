@@ -52,6 +52,7 @@ export interface WSMessageData {
   actionId?: string; // 动作ID
   status?: "active" | "completed" | "instant"; // 交互状态
   duration?: number; // 持续时间
+  startTime?: number; // 新增：持续性动作开始时间戳
 
   // 用户列表
   users?: WSUser[]; // 在线用户列表

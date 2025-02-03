@@ -18,7 +18,7 @@ interface LoginResponse {
 
 interface OnlineUser {
   id: number;
-  username: string;
+  nickname: string;
 }
 
 export class AuthService {

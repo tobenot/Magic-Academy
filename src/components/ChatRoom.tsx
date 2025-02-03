@@ -26,6 +26,8 @@ interface Message {
   actionId?: string;
   status?: WSMessageData["status"];
   duration?: number;
+  startTime?: number;
+  initialRemaining?: number;
   initiatorId?: number;
   targetId?: number;
   targetName?: string;
@@ -89,6 +91,14 @@ const ChatRoom = (): JSX.Element => {
                     : undefined,
                 targetId: msg.data.targetId,
                 targetName: msg.data.targetName,
+                startTime: msg.data.startTime,
+                initialRemaining:
+                  msg.data.duration && msg.data.startTime
+                    ? Math.max(
+                        msg.data.duration - (Date.now() - msg.data.startTime),
+                        0,
+                      )
+                    : undefined,
               }),
             );
             setMessages((prev) => [...historyMessages, ...prev]);
@@ -109,6 +119,15 @@ const ChatRoom = (): JSX.Element => {
             duration:
               message.data.duration && message.data.duration > 0
                 ? message.data.duration
+                : undefined,
+            startTime: message.data.startTime,
+            initialRemaining:
+              message.data.duration && message.data.startTime
+                ? Math.max(
+                    message.data.duration -
+                      (Date.now() - message.data.startTime),
+                    0,
+                  )
                 : undefined,
             initiatorId: message.data.initiatorId,
             targetId: message.data.targetId,
@@ -188,12 +207,12 @@ const ChatRoom = (): JSX.Element => {
 
     setOnlineUsers((prev) => {
       const exists = prev.some((user) => user.id === event.data.initiatorId);
-      if (!exists && event.data.initiatorId && event.data.nickname) {
+      if (!exists && event.data.initiatorId && event.data.initiatorName) {
         return [
           ...prev,
           {
             id: event.data.initiatorId,
-            nickname: event.data.nickname,
+            nickname: event.data.initiatorName,
             status: "online",
             lastActive: event.timestamp,
           },
@@ -327,6 +346,9 @@ const ChatRoom = (): JSX.Element => {
       }),
     }[msg.type];
 
+    // 使用初始化时记录的剩余持续时间
+    const remainingDuration = msg.initialRemaining || 0;
+
     return (
       <div className={`message m-2 p-2 rounded ${messageClass}`}>
         <span
@@ -345,7 +367,9 @@ const ChatRoom = (): JSX.Element => {
               <div
                 className="h-full bg-primary animate-progress"
                 style={
-                  { "--duration": `${msg.duration}ms` } as React.CSSProperties
+                  {
+                    "--duration": `${remainingDuration}ms`,
+                  } as React.CSSProperties
                 }
               />
             </div>
