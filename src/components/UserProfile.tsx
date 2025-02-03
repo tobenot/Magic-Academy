@@ -24,8 +24,15 @@ enum ActionCategory {
 interface InteractionAction {
   id: string;
   name: string;
+  category: ActionCategory;
+  message: string;
+  endMessage?: string;
   needsTarget: boolean;
-  duration?: number;
+  needsEndMessage?: boolean;
+  duration?: number | null;
+  persistent: boolean;
+  initiatorId: string;
+  targetId: string;
 }
 
 // 修改动作分类类型
@@ -80,6 +87,7 @@ const UserProfileCard = ({
   const [selectedCategory, setSelectedCategory] =
     useState<ActionCategory | null>(null);
   const [loadingActions, setLoadingActions] = useState(false);
+  const [currentActions, setCurrentActions] = useState<InteractionAction[]>([]);
 
   const assetLoader = AssetLoader.getInstance();
   const getCardImagePath = (cardId: string): string => {
@@ -147,10 +155,26 @@ const UserProfileCard = ({
       const { success, data } = await response.json();
 
       if (success && data) {
-        // 直接使用后端返回的分类数据
-        setActions(data);
+        if (Array.isArray(data)) {
+          // 如果返回的是数组，则按分类进行分组
+          const groupedActions: ActionsByCategory = {};
+          data.forEach((action: InteractionAction) => {
+            const category = action.category as ActionCategory;
+            if (!groupedActions[category]) {
+              groupedActions[category] = [];
+            }
+            groupedActions[category]?.push(action);
+          });
+          setActions(groupedActions);
+        } else if (typeof data === "object") {
+          // 如果返回的是对象，则认为数据已经以分类为 key
+          setActions(data);
+        } else {
+          console.error("动作列表数据格式错误", data);
+          setActions({});
+        }
       } else {
-        console.error("动作列表数据格式错误");
+        console.error("动作列表数据格式错误", data);
         setActions({});
       }
     } catch (err) {
@@ -161,10 +185,41 @@ const UserProfileCard = ({
     }
   }, []);
 
+  const fetchCurrentActions = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/interaction/current`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+      if (!response.ok) {
+        throw new Error("获取当前进行中的动作失败");
+      }
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        setCurrentActions(result.data);
+      } else {
+        setCurrentActions([]);
+      }
+    } catch (err) {
+      console.error("获取当前动作失败：", err);
+      setCurrentActions([]);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProfile();
     fetchActions();
   }, [fetchProfile, fetchActions]);
+
+  useEffect(() => {
+    if (showActionMenu) {
+      fetchCurrentActions();
+    }
+  }, [showActionMenu, fetchCurrentActions]);
 
   const wsService = WebSocketService.getInstance();
 
@@ -174,28 +229,61 @@ const UserProfileCard = ({
       if (!wsService) return;
 
       try {
-        // 如果动作需要目标但没有目标ID，则不执行
         if (action.needsTarget && !userId) {
           console.warn("该动作需要目标用户");
           return;
         }
 
-        // 发送交互请求
-        await wsService.sendInteraction(
-          action.id,
-          action.needsTarget ? userId : undefined,
-        );
-
-        // 关闭动作菜单
-        setShowActionMenu(false);
-        setSelectedCategory(null);
-        onClose();
+        if (action.persistent) {
+          // 对于持久性动作，执行后记录到当前动作列表，并关闭动作菜单
+          await wsService.sendInteraction(
+            action.id,
+            action.needsTarget ? userId : undefined,
+          );
+          setCurrentActions((prev) => [...prev, action]); // 更新当前进行中的动作列表
+          setShowActionMenu(false);
+        } else {
+          // 非持久性动作执行后关闭整个弹窗
+          await wsService.sendInteraction(
+            action.id,
+            action.needsTarget ? userId : undefined,
+          );
+          setShowActionMenu(false);
+          setSelectedCategory(null);
+          onClose();
+        }
       } catch (err) {
         console.error("执行动作失败:", err);
-        // 这里可以添加错误提示
       }
     },
     [userId, wsService, onClose],
+  );
+
+  // 新增取消持久性动作的处理函数
+  const handleCancelAction = useCallback(
+    async (action: InteractionAction) => {
+      if (!wsService) return;
+      try {
+        await wsService.cancelInteraction(action.id, action.targetId);
+        setCurrentActions(currentActions.filter((a) => a.id !== action.id));
+      } catch (err) {
+        console.error("取消动作失败:", err);
+      }
+    },
+    [userId, wsService, currentActions, setCurrentActions],
+  );
+
+  // 新增取消指定动作的处理函数
+  const handleCancelSpecificAction = useCallback(
+    async (action: InteractionAction) => {
+      try {
+        await wsService.cancelInteraction(action.id, action.targetId);
+        setCurrentActions((prev) => prev.filter((a) => a.id !== action.id));
+      } catch (err) {
+        console.error("取消动作失败:", err);
+      }
+    },
+    [wsService, userId],
   );
 
   // 在选择分类时获取动作列表
@@ -211,6 +299,10 @@ const UserProfileCard = ({
 
   // 修改 categories 的获取方式
   const categories = Object.values(ActionCategory);
+
+  const relevantActions = currentActions.filter(
+    (action) => action.initiatorId === userId || action.targetId === userId,
+  );
 
   if (loading) {
     return (
@@ -374,11 +466,46 @@ const UserProfileCard = ({
                 选择互动类型
               </h3>
 
-              {/* 使用网格布局替代轮盘式布局 */}
+              {/* 新增：展示当前进行中的动作列表 */}
+              {relevantActions.length > 0 && (
+                <div className="space-y-2 max-h-48 overflow-y-auto bg-black/20 rounded-lg p-4 mb-6 animate-fade-in">
+                  <h4 className="text-lg font-cinzel text-primary mb-3">
+                    当前进行中的动作
+                  </h4>
+                  {relevantActions.map((action) => (
+                    <div
+                      key={action.id}
+                      className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-white">{action.name}</span>
+                        {action.initiatorId === userId && (
+                          <span className="text-xs text-gray-400">
+                            (我发起的)
+                          </span>
+                        )}
+                        {action.targetId === userId &&
+                          action.initiatorId !== userId && (
+                            <span className="text-xs text-gray-400">
+                              (对我的)
+                            </span>
+                          )}
+                      </div>
+                      <button
+                        onClick={() => handleCancelSpecificAction(action)}
+                        className="px-2 py-1 bg-red-600 text-white rounded text-xs"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 原有的动作类别按钮区域 */}
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {categories.map((category) => {
                   const isSelected = selectedCategory === category;
-
                   return (
                     <button
                       key={category}
@@ -406,7 +533,7 @@ const UserProfileCard = ({
                 })}
               </div>
 
-              {/* 动作列表 */}
+              {/* 动作列表（选中某分类后显示该分类下的所有动作） */}
               {selectedCategory && (
                 <div className="space-y-2 max-h-48 overflow-y-auto bg-black/20 rounded-lg p-4 animate-fade-in">
                   <h4 className="text-lg font-cinzel text-primary mb-3 flex items-center">
@@ -415,7 +542,6 @@ const UserProfileCard = ({
                     </span>
                     {categoryNames[selectedCategory]}
                   </h4>
-
                   {loadingActions ? (
                     <div className="flex justify-center py-4">
                       <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
@@ -434,6 +560,11 @@ const UserProfileCard = ({
                           {action.needsTarget && (
                             <span className="text-xs text-gray-400">
                               (需要目标)
+                            </span>
+                          )}
+                          {action.persistent && (
+                            <span className="text-xs text-blue-300">
+                              (持续)
                             </span>
                           )}
                         </div>
@@ -466,10 +597,6 @@ const UserProfileCard = ({
             </div>
           </div>
         )}
-
-        <div className="absolute bottom-4 left-4 text-xs text-gray-200 opacity-60 pointer-events-none">
-          ID: {profile.id}
-        </div>
       </div>
     </div>
   );

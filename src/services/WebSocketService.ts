@@ -197,6 +197,38 @@ export class WebSocketService extends EventEmitter {
     }
   }
 
+  public async cancelInteraction(
+    actionId: string,
+    targetId?: number,
+  ): Promise<void> {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/interaction/cancel`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ actionId, targetId }),
+          },
+        );
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.message);
+        }
+      } catch (err) {
+        console.error("[WebSocket] 取消交互失败:", err);
+        throw err;
+      }
+    } else {
+      console.warn("[WebSocket] 未连接，取消操作发送失败");
+      throw new Error("WebSocket 未连接");
+    }
+  }
+
   private sendHeartbeat(): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       const heartbeat: WSClientMessage = {
