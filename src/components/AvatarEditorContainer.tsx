@@ -13,6 +13,7 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
   const [loading, setLoading] = useState(true);
   const [appearance, setAppearance] = useState<AvatarAppearance | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   // 更新如下，改为从 localStorage 获取玩家自己的 userId
   const storedUserId = localStorage.getItem("userId");
@@ -68,6 +69,7 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
         console.log("保存成功");
         // 保存成功后关闭编辑面板
         onClose();
+        setIsOpen(false);
       } else {
         throw new Error(result.message || "保存失败");
       }
@@ -81,10 +83,20 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
   const handleCancel = () => {
     console.log("取消编辑");
     onClose();
+    setIsOpen(false);
   };
 
+  if (!isOpen) return null;
+
   if (loading) {
-    return <div>加载中...</div>;
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
+        <div className="relative bg-white/20 border border-white/30 p-8 rounded-2xl shadow-xl backdrop-blur-sm min-w-[350px] flex flex-col items-center">
+          <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
+          <div className="mt-4 text-white text-lg font-medium">加载中...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {

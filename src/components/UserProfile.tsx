@@ -92,7 +92,7 @@ const UserProfileCard = ({
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+      <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
         <div className="relative bg-white/10 p-8 rounded-xl shadow-2xl min-w-[200px]">
           <CloseButton onClose={onClose} />
           <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
@@ -103,7 +103,7 @@ const UserProfileCard = ({
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+      <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
         <div className="relative bg-white/10 p-8 rounded-xl shadow-2xl min-w-[300px]">
           <CloseButton onClose={onClose} />
           <div className="flex items-center space-x-3 text-red-400 font-noto-serif">
@@ -129,7 +129,7 @@ const UserProfileCard = ({
 
   if (!profile) {
     return (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in">
+      <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
         <div className="relative bg-white/10 p-8 rounded-xl shadow-2xl min-w-[200px]">
           <CloseButton onClose={onClose} />
           <div className="text-white">未找到用户资料</div>
@@ -139,7 +139,7 @@ const UserProfileCard = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center animate-fade-in">
+    <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
       <div className="relative max-w-md w-full mx-4 bg-gradient-to-b from-white/10 to-white/5 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden transform transition-all">
         <CloseButton onClose={onClose} />
 

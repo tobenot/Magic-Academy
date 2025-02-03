@@ -14,6 +14,11 @@ export default {
           personal: "#2196F3",
           activity: "#9C27B0",
         },
+        avatar: {
+          DEFAULT: "#f0f4f8",
+          primary: "#1d4ed8",
+          secondary: "#64748b",
+        },
       },
       fontFamily: {
         cinzel: ["Cinzel", "serif"],
@@ -63,7 +68,7 @@ export default {
         },
       },
       animation: {
-        "fade-in": "fade-in 0.3s ease-out",
+        "fade-in": "fade-in 0.5s ease-out",
         "rotate-in": "rotate-in 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
         progress: "progress var(--duration) linear forwards",
         "action-pulse": "action-pulse 2s ease-in-out infinite",
@@ -76,6 +81,14 @@ export default {
       backgroundImage: {
         "action-gradient":
           "linear-gradient(45deg, var(--action-from), var(--action-to))",
+      },
+      spacing: {
+        128: "32rem",
+        144: "36rem",
+        160: "40rem",
+      },
+      borderRadius: {
+        xl: "1rem",
       },
     },
   },
