@@ -4,7 +4,8 @@ export interface AvatarMappingEntry {
   displayname: string;
   enGenImage: string;
   zhGenImage: string;
-  appliesTo?: string | string[];
+  appliesTo: string | string[];
+  allowColor?: boolean;
 }
 
 export const AvatarMapping: Record<string, AvatarMappingEntry> = {
@@ -66,6 +67,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     enGenImage: "blue",
     zhGenImage: "蓝色",
     appliesTo: "eyeColor",
+    allowColor: true,
   },
   het_red_blue: {
     id: "het_red_blue",
@@ -81,7 +83,8 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     displayname: "长卷发",
     enGenImage: "long curly hair",
     zhGenImage: "长卷发",
-    appliesTo: "hairdisplayname",
+    appliesTo: "hairDescription",
+    allowColor: true,
   },
   face_sharp: {
     id: "face_sharp",
@@ -150,6 +153,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     enGenImage: "green",
     zhGenImage: "绿色",
     appliesTo: "eyeColor",
+    allowColor: true,
   },
   eye_brown: {
     id: "eye_brown",
@@ -191,7 +195,8 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     displayname: "短直发",
     enGenImage: "short straight hair",
     zhGenImage: "短直发",
-    appliesTo: "hairdisplayname",
+    appliesTo: "hairDescription",
+    allowColor: true,
   },
   face_round: {
     id: "face_round",
@@ -243,7 +248,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     displayname: "中长波浪发",
     enGenImage: "medium wavy hair",
     zhGenImage: "中长波浪发",
-    appliesTo: "hairdisplayname",
+    appliesTo: "hairDescription",
   },
   hair_braided: {
     id: "hair_braided",
@@ -251,7 +256,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     displayname: "辫子",
     enGenImage: "braided hair",
     zhGenImage: "辫子",
-    appliesTo: "hairdisplayname",
+    appliesTo: "hairDescription",
   },
   hair_afro: {
     id: "hair_afro",
@@ -259,7 +264,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     displayname: "蓬松卷发",
     enGenImage: "afro hair",
     zhGenImage: "蓬松卷发",
-    appliesTo: "hairdisplayname",
+    appliesTo: "hairDescription",
   },
   hair_mohawk: {
     id: "hair_mohawk",
@@ -267,7 +272,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     displayname: "莫霍克发型",
     enGenImage: "mohawk hairstyle",
     zhGenImage: "莫霍克发型",
-    appliesTo: "hairdisplayname",
+    appliesTo: "hairDescription",
   },
 
   // 新增面部特征选项
@@ -364,6 +369,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     enGenImage: "white T-shirt",
     zhGenImage: "白色T恤",
     appliesTo: "baseLayer",
+    allowColor: true,
   },
   clothing_outer_blue: {
     id: "clothing_outer_blue",
@@ -372,6 +378,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
     enGenImage: "blue denim jacket",
     zhGenImage: "蓝色牛仔外套",
     appliesTo: "outerLayer",
+    allowColor: true,
   },
   clothing_accessory_scarf: {
     id: "clothing_accessory_scarf",
