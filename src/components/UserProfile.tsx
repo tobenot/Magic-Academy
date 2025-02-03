@@ -293,9 +293,11 @@ const UserProfileCard = ({
           <div className="space-y-4">
             {/* 用户名和状态 */}
             <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-cinzel font-bold text-primary">
-                {profile.username}
-              </h3>
+              <div className="flex flex-col">
+                <h3 className="text-2xl font-cinzel font-bold text-primary">
+                  {profile.nickname}
+                </h3>
+              </div>
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${
                   profile.status === "online"
@@ -464,6 +466,10 @@ const UserProfileCard = ({
             </div>
           </div>
         )}
+
+        <div className="absolute bottom-4 left-4 text-xs text-gray-200 opacity-60 pointer-events-none">
+          ID: {profile.id}
+        </div>
       </div>
     </div>
   );

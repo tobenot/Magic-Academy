@@ -120,7 +120,7 @@ const AuthForm = ({ onLoginSuccess }: AuthFormProps): JSX.Element => {
               <input
                 type="text"
                 name="nickname"
-                placeholder="昵称 (可选, 最大20字符)"
+                placeholder="昵称 (可选, 显示名，最大20字符)"
                 className="w-full p-2 rounded bg-white/10 text-white border border-white/20"
                 value={credentials.nickname}
                 maxLength={20}

@@ -31,7 +31,7 @@ export enum WSMessageType {
 // 3. 用户信息类型
 export interface WSUser {
   id: number;
-  username: string;
+  nickname: string;
   status: "online" | "offline" | "away";
   lastActive: number;
 }

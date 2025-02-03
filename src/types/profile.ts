@@ -1,6 +1,6 @@
 export interface UserProfile {
   id: number;
-  username: string;
+  nickname: string;
   title?: string;
   avatar?: string;
   cardImage: string;

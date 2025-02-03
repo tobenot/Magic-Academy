@@ -165,14 +165,14 @@ const ChatRoom = (): JSX.Element => {
   const fetchOnlineUsers = useCallback(async () => {
     try {
       const users = await authService.getOnlineUsers();
-      // 注意：getOnlineUsers接口返回的对象目前只包含 id 和 username，
+      // 注意：getOnlineUsers接口返回的对象目前只包含 id 和 nickname，
       // 为避免 TS 错误，这里为缺失的字段直接赋默认值，
       // 请与后端确认是否需要返回status和lastActive字段。
       const transformed: WSUser[] = (
-        users as Array<{ id: number; username: string }>
+        users as Array<{ id: number; nickname: string }>
       ).map((user) => ({
         id: user.id,
-        username: user.username,
+        nickname: user.nickname,
         status: "online", // 默认赋值
         lastActive: Date.now(), // 默认赋值
       }));
@@ -188,12 +188,12 @@ const ChatRoom = (): JSX.Element => {
 
     setOnlineUsers((prev) => {
       const exists = prev.some((user) => user.id === event.data.initiatorId);
-      if (!exists && event.data.initiatorId && event.data.initiatorName) {
+      if (!exists && event.data.initiatorId && event.data.nickname) {
         return [
           ...prev,
           {
             id: event.data.initiatorId,
-            username: event.data.initiatorName,
+            nickname: event.data.nickname,
             status: "online",
             lastActive: event.timestamp,
           },
@@ -228,15 +228,15 @@ const ChatRoom = (): JSX.Element => {
     const checkAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
-        if (user && typeof user === "object" && "username" in user) {
+        if (user && typeof user === "object" && "nickname" in user) {
           console.log("Current user:", user);
 
-          if (typeof user.username !== "string") {
-            console.error("Invalid username type:", typeof user.username);
+          if (typeof user.nickname !== "string") {
+            console.error("Invalid nickname type:", typeof user.nickname);
             return;
           }
 
-          setUsername(user.username);
+          setUsername(user.nickname);
           const ws = WebSocketService.getInstance();
           setWsService(ws);
 
@@ -379,7 +379,7 @@ const ChatRoom = (): JSX.Element => {
                 className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer"
                 onClick={() => setSelectedUserId(user.id)}
               >
-                {user.username}
+                {user.nickname}
               </div>
             ))}
           </div>

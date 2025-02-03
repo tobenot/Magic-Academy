@@ -11,7 +11,7 @@ interface User {
 
 interface LoginResponse {
   message: string;
-  username: string;
+  nickname: string;
   token: string;
   id: number;
 }
@@ -59,7 +59,7 @@ export class AuthService {
 
     if (data.token) {
       localStorage.setItem("token", data.token);
-      localStorage.setItem("username", data.username);
+      localStorage.setItem("nickname", data.nickname);
       if (typeof data.id === "number") {
         localStorage.setItem("userId", data.id.toString());
       }
@@ -102,7 +102,7 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem("token");
-    localStorage.removeItem("username");
+    localStorage.removeItem("nickname");
     localStorage.removeItem("userId");
   }
 
