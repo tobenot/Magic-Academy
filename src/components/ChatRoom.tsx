@@ -318,9 +318,9 @@ const ChatRoom = (): JSX.Element => {
 
   // 更新页面标题
   useEffect(() => {
-    document.title = `魔法学院 - ${username || "未登录"}`;
+    document.title = `万象魔法学院 - ${username || "未登录"}`;
     return () => {
-      document.title = "魔法学院";
+      document.title = "万象魔法学院";
     };
   }, [username]);
 

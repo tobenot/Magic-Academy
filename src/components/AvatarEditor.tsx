@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { AvatarMapping } from "../config/avatarMapping";
 import { AvatarCustomization } from "../types/avatar";
 import { ColorMapping } from "../config/colorMapping";
@@ -71,6 +71,110 @@ const sections: { title: string; key: string; fields: FieldDefinition[] }[] = [
     fields: [{ label: "标签", key: "tags", multi: true }],
   },
 ];
+
+const DropdownMenu = ({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: AvatarMappingEntry[];
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((opt) => opt.id === value);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-2 text-left bg-white border border-gray-300 rounded-lg shadow-sm 
+                 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+                 transition duration-150 ease-in-out"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-gray-800">
+            {selectedOption?.displayname || "请选择"}
+          </span>
+          <svg
+            className={`w-5 h-5 transition-transform duration-200 text-gray-600 ${
+              isOpen ? "transform rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white rounded-lg shadow-dropdown animate-dropdown-open">
+          <div className="max-h-60 overflow-auto py-1">
+            {options.map((option) => (
+              <button
+                type="button"
+                key={option.id}
+                onClick={() => {
+                  onChange(option.id);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-4 py-2 text-left text-gray-800 hover:bg-gray-100
+                          ${value === option.id ? "bg-gray-50 font-medium" : ""}
+                          transition duration-150 ease-in-out`}
+              >
+                <div className="flex items-center">
+                  <span>{option.displayname}</span>
+                  {value === option.id && (
+                    <svg
+                      className="w-5 h-5 ml-2 text-primary"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AvatarEditor: React.FC<AvatarEditorProps> = ({
   initialAppearance,
@@ -277,15 +381,15 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                 ))}
                             </select>
                           ) : (
-                            <>
-                              <select
+                            <div className="space-y-2">
+                              <DropdownMenu
+                                options={Object.values(AvatarMapping).filter(
+                                  (option) => option.appliesTo === field.key,
+                                )}
                                 value={
                                   typeof (appearance as any)[section.key]?.[
                                     field.key
-                                  ] === "object" &&
-                                  (appearance as any)[section.key]?.[
-                                    field.key
-                                  ] !== null
+                                  ] === "object"
                                     ? (appearance as any)[section.key][
                                         field.key
                                       ].id
@@ -293,80 +397,15 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                         field.key
                                       ] || ""
                                 }
-                                onChange={(e) =>
-                                  handleChange(
-                                    section.key,
-                                    field.key,
-                                    e.target.value,
-                                  )
+                                onChange={(value) =>
+                                  handleChange(section.key, field.key, value)
                                 }
-                                className="w-full p-3 rounded bg-white/30 text-white border border-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                              >
-                                {(() => {
-                                  let isOptional = false;
-                                  if (
-                                    section.key === "appearance" &&
-                                    (field.key === "gender" ||
-                                      field.key === "heterochromia")
-                                  ) {
-                                    isOptional = true;
-                                  } else if (
-                                    section.key === "clothing" &&
-                                    (field.key === "outerLayer" ||
-                                      field.key === "accessory")
-                                  ) {
-                                    isOptional = true;
-                                  } else if (
-                                    section.key === "equipment" ||
-                                    section.key === "dynamicLayer"
-                                  ) {
-                                    isOptional = true;
-                                  }
-
-                                  const fieldOptions =
-                                    field.key === "gender"
-                                      ? Object.values(AvatarMapping).filter(
-                                          (option) =>
-                                            option.id.startsWith("gender_"),
-                                        )
-                                      : Object.values(AvatarMapping).filter(
-                                          (option) => {
-                                            if (
-                                              Array.isArray(option.appliesTo)
-                                            ) {
-                                              return option.appliesTo.includes(
-                                                field.key,
-                                              );
-                                            }
-                                            return (
-                                              option.appliesTo === field.key
-                                            );
-                                          },
-                                        );
-
-                                  return (
-                                    <>
-                                      {isOptional && (
-                                        <option value="">无</option>
-                                      )}
-                                      {fieldOptions.map((option) => (
-                                        <option
-                                          key={option.id}
-                                          value={option.id}
-                                        >
-                                          {option.displayname}
-                                        </option>
-                                      ))}
-                                    </>
-                                  );
-                                })()}
-                              </select>
+                                label={field.label}
+                              />
                               {(() => {
-                                // 获取当前字段的值
                                 const currentVal = (appearance as any)[
                                   section.key
                                 ]?.[field.key];
-                                // 如果是对象则取 id，否则直接使用
                                 const currentId =
                                   typeof currentVal === "object" &&
                                   currentVal !== null
@@ -375,23 +414,19 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                 const currentOption = Object.values(
                                   AvatarMapping,
                                 ).find((option) => option.id === currentId);
-                                if (currentOption && currentOption.allowColor) {
+
+                                // 只在允许颜色选择的选项下显示颜色选择器
+                                if (currentOption?.allowColor) {
                                   return (
-                                    <div className="mt-2">
+                                    <div className="mt-4">
                                       <label className="block text-white mb-1">
-                                        颜色选择
+                                        颜色
                                       </label>
                                       <select
                                         value={
-                                          typeof (appearance as any)[
-                                            section.key
-                                          ]?.[field.key] === "object" &&
-                                          (appearance as any)[section.key]?.[
-                                            field.key
-                                          ] !== null
-                                            ? (appearance as any)[section.key][
-                                                field.key
-                                              ].color || ""
+                                          typeof currentVal === "object" &&
+                                          currentVal !== null
+                                            ? currentVal.color || ""
                                             : ""
                                         }
                                         onChange={(e) =>
@@ -420,7 +455,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                 }
                                 return null;
                               })()}
-                            </>
+                            </div>
                           )}
                         </div>
                       ))}
@@ -453,7 +488,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                   onClick={handleGenerateAvatar}
                   className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg transition"
                 >
-                  {generating ? "生成中..." : "生成立绘"}
+                  {generating ? "生成中..." : "重新生成立绘"}
                 </button>
               </div>
             </div>

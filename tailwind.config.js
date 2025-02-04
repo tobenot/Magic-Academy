@@ -66,6 +66,10 @@ export default {
             opacity: "0.8",
           },
         },
+        "dropdown-open": {
+          "0%": { opacity: "0", transform: "translateY(-4px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.5s ease-out",
@@ -74,9 +78,12 @@ export default {
         "action-pulse": "action-pulse 2s ease-in-out infinite",
         "action-complete": "action-complete 0.5s ease-out",
         "progress-glow": "progress-glow 2s ease-in-out infinite",
+        "dropdown-open": "dropdown-open 0.2s ease-out",
       },
       boxShadow: {
         action: "0 0 10px var(--action-color)",
+        dropdown:
+          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
       },
       backgroundImage: {
         "action-gradient":
@@ -89,6 +96,13 @@ export default {
       },
       borderRadius: {
         xl: "1rem",
+      },
+      backgroundColor: {
+        dropdown: {
+          DEFAULT: "#ffffff",
+          hover: "#f3f4f6",
+          selected: "#e5e7eb",
+        },
       },
     },
   },
