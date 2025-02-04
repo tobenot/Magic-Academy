@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { AvatarMapping } from "../config/avatarMapping";
+import { AvatarMapping, AvatarMappingEntry } from "../config/avatarMapping";
 import { AvatarCustomization } from "../types/avatar";
 import { ColorMapping } from "../config/colorMapping";
 
@@ -76,7 +76,6 @@ const DropdownMenu = ({
   options,
   value,
   onChange,
-  label,
 }: {
   options: AvatarMappingEntry[];
   value: string;
