@@ -107,7 +107,7 @@ const AvatarEditorContainer: React.FC<AvatarEditorContainerProps> = ({
   return appearance ? (
     <AvatarEditor
       initialAppearance={appearance}
-      initialImageUrl={savedImageUrl}
+      initialImageUrl={savedImageUrl ?? undefined}
       onSave={handleSave}
       onCancel={handleCancel}
     />

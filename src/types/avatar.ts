@@ -14,7 +14,7 @@ export interface AvatarAppearance {
   eyeColor: string; // 例如 "eye_blue"（蓝色）
   heterochromia?: string; // 例如 "het_red_blue"（红蓝异瞳）
   hairDescription: string; // 例如 "hair_long_curly"（长卷发）
-  facialFeatures: string; // 例如 "face_sharp"（尖下巴）
+  facialFeatures?: string; // 例如 "face_sharp"（尖下巴）
 
   // 可扩展其他描述项
   [key: string]: any;
