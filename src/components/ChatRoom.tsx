@@ -50,6 +50,10 @@ const ChatRoom = (): JSX.Element => {
   // 新增状态：控制生成 CG 弹窗可见性和图片 URL
   const [cgModalVisible, setCgModalVisible] = useState<boolean>(false);
   const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
+  // 新增状态：跟踪正在生成CG图片的消息ID列表
+  const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>(
+    [],
+  );
 
   // 处理消息发送
   const sendMessage = useCallback((): void => {
@@ -189,8 +193,13 @@ const ChatRoom = (): JSX.Element => {
     [sendMessage],
   );
 
-  // 新增函数：生成交互CG图片
+  // 修改后的生成交互CG图片函数
   const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
+    // 添加当前 messageId 到生成中的状态，防止重复点击
+    setGeneratingCGMessages((prev) => {
+      if (prev.includes(interactionMessageId)) return prev;
+      return [...prev, interactionMessageId];
+    });
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/interaction/generate-cg`,
@@ -215,6 +224,11 @@ const ChatRoom = (): JSX.Element => {
     } catch (error: any) {
       console.error("生成CG图片失败:", error);
       alert("生成CG图片失败: " + error.message);
+    } finally {
+      // 移除生成中的状态
+      setGeneratingCGMessages((prev) =>
+        prev.filter((id) => id !== interactionMessageId),
+      );
     }
   }, []);
 
@@ -415,12 +429,21 @@ const ChatRoom = (): JSX.Element => {
 
         {msg.type === "interaction" && msg.messageId && (
           <div className="mt-2">
-            <button
-              onClick={() => handleGenerateCG(msg.messageId)}
-              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded"
-            >
-              生成CG图片
-            </button>
+            {generatingCGMessages.includes(msg.messageId) ? (
+              <button
+                disabled
+                className="px-3 py-1 bg-blue-500 text-white rounded"
+              >
+                生成中...
+              </button>
+            ) : (
+              <button
+                onClick={() => handleGenerateCG(msg.messageId)}
+                className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded"
+              >
+                生成CG图片
+              </button>
+            )}
           </div>
         )}
 
