@@ -17,9 +17,11 @@ import {
 } from "../types/websocket";
 import UserProfileCard from "./UserProfile";
 import classNames from "classnames";
+import CGModal from "./CGModal";
 
 interface Message {
   type: WSMessageData["type"];
+  messageId: string;
   username: string;
   content: string;
   timestamp: number;
@@ -45,6 +47,9 @@ const ChatRoom = (): JSX.Element => {
 
   const [onlineUsers, setOnlineUsers] = useState<WSUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  // 新增状态：控制生成 CG 弹窗可见性和图片 URL
+  const [cgModalVisible, setCgModalVisible] = useState<boolean>(false);
+  const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
 
   // 处理消息发送
   const sendMessage = useCallback((): void => {
@@ -61,6 +66,7 @@ const ChatRoom = (): JSX.Element => {
           ...prev,
           {
             type: message.data.type,
+            messageId: message.messageId,
             username: message.data.initiatorName || "未知用户",
             content: message.data.message,
             timestamp: message.timestamp,
@@ -77,6 +83,7 @@ const ChatRoom = (): JSX.Element => {
             const historyMessages = historyData.messages.map(
               (msg: WSServerMessage) => ({
                 type: msg.data.type,
+                messageId: msg.messageId,
                 username:
                   msg.data.initiatorName ||
                   (msg.data.type === "system" ? "System" : "未知用户"),
@@ -111,6 +118,7 @@ const ChatRoom = (): JSX.Element => {
           ...prev,
           {
             type: message.data.type,
+            messageId: message.messageId,
             username: message.data.initiatorName || "未知用户",
             content: message.data.message,
             timestamp: message.timestamp,
@@ -141,6 +149,7 @@ const ChatRoom = (): JSX.Element => {
           ...prev,
           {
             type: "system",
+            messageId: message.messageId,
             username: "System",
             content: message.data.message,
             timestamp: message.timestamp,
@@ -179,6 +188,35 @@ const ChatRoom = (): JSX.Element => {
     },
     [sendMessage],
   );
+
+  // 新增函数：生成交互CG图片
+  const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/interaction/generate-cg`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ interactionMessageId }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { imageUrl } = await response.json();
+      // 更新状态，显示弹窗UI并传入获取到的图片 URL
+      setCgImageUrl(imageUrl);
+      setCgModalVisible(true);
+    } catch (error: any) {
+      console.error("生成CG图片失败:", error);
+      alert("生成CG图片失败: " + error.message);
+    }
+  }, []);
 
   // 定义获取在线用户列表的函数
   const fetchOnlineUsers = useCallback(async () => {
@@ -375,6 +413,17 @@ const ChatRoom = (): JSX.Element => {
             </div>
           )}
 
+        {msg.type === "interaction" && msg.messageId && (
+          <div className="mt-2">
+            <button
+              onClick={() => handleGenerateCG(msg.messageId)}
+              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded"
+            >
+              生成CG图片
+            </button>
+          </div>
+        )}
+
         <span className="text-xs text-gray-500 ml-2">
           {new Date(msg.timestamp).toLocaleTimeString()}
         </span>
@@ -446,6 +495,13 @@ const ChatRoom = (): JSX.Element => {
         <UserProfileCard
           userId={selectedUserId}
           onClose={() => setSelectedUserId(null)}
+        />
+      )}
+
+      {cgModalVisible && cgImageUrl && (
+        <CGModal
+          imageUrl={cgImageUrl}
+          onClose={() => setCgModalVisible(false)}
         />
       )}
     </div>
