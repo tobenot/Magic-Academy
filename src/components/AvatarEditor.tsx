@@ -380,38 +380,54 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                             </select>
                           ) : (
                             <div className="space-y-2">
-                              <DropdownMenu
-                                options={Object.values(AvatarMapping).filter(
-                                  (option) => option.appliesTo === field.key,
-                                )}
-                                value={
-                                  typeof (appearance as any)[section.key]?.[
-                                    field.key
-                                  ] === "object"
-                                    ? (appearance as any)[section.key][
-                                        field.key
-                                      ].id
-                                    : (appearance as any)[section.key]?.[
-                                        field.key
-                                      ] || ""
-                                }
-                                onChange={(value) =>
-                                  handleChange(section.key, field.key, value)
-                                }
-                                label={field.label}
-                              />
                               {(() => {
-                                const currentVal = (appearance as any)[
-                                  section.key
-                                ]?.[field.key];
+                                // 先得到原始选项
+                                const baseOptions = Object.values(AvatarMapping).filter(
+                                  (option) => option.appliesTo === field.key,
+                                );
+                                // 如果当前 section 是装备，则增加默认选项
+                                const options =
+                                  section.key === "equipment"
+                                    ? [
+                                        {
+                                          id: "",
+                                          displayname: "默认",
+                                          appliesTo: field.key,
+                                          allowColor: false,
+                                        },
+                                        ...baseOptions,
+                                      ]
+                                    : baseOptions;
+                                return (
+                                  <DropdownMenu
+                                    options={options}
+                                    value={
+                                      typeof (appearance as any)[section.key]?.[
+                                        field.key
+                                      ] === "object"
+                                        ? (appearance as any)[section.key][
+                                            field.key
+                                          ].id
+                                        : (appearance as any)[section.key]?.[
+                                            field.key
+                                          ] || ""
+                                    }
+                                    onChange={(value) =>
+                                      handleChange(section.key, field.key, value)
+                                    }
+                                    label={field.label}
+                                  />
+                                );
+                              })()}
+                              {(() => {
+                                const currentVal = (appearance as any)[section.key]?.[field.key];
                                 const currentId =
-                                  typeof currentVal === "object" &&
-                                  currentVal !== null
+                                  typeof currentVal === "object" && currentVal !== null
                                     ? currentVal.id
                                     : currentVal;
-                                const currentOption = Object.values(
-                                  AvatarMapping,
-                                ).find((option) => option.id === currentId);
+                                const currentOption = Object.values(AvatarMapping).find(
+                                  (option) => option.id === currentId,
+                                );
 
                                 // 只在允许颜色选择的选项下显示颜色选择器
                                 if (currentOption?.allowColor) {
