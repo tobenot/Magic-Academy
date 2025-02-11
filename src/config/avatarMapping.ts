@@ -203,7 +203,8 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "长卷发",
   "enGenImage": "long curly hair",
   "zhGenImage": "长卷发",
-  "appliesTo": "hairDescription"
+  "appliesTo": "hairDescription",
+  "allowColor": true
 },
 "hair_long_straight": {
   "id": "hair_long_straight",
