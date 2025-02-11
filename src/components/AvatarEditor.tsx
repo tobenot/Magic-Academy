@@ -30,7 +30,6 @@ const sections: { title: string; key: string; fields: FieldDefinition[] }[] = [
       { label: "肤色", key: "skinColor" },
       { label: "性别", key: "gender" },
       { label: "眼睛颜色", key: "eyeColor" },
-      { label: "异瞳", key: "heterochromia" },
       { label: "发型", key: "hairDescription" },
       { label: "面部特征", key: "facialFeatures" },
     ],
@@ -61,7 +60,7 @@ const sections: { title: string; key: string; fields: FieldDefinition[] }[] = [
     key: "dynamicLayer",
     fields: [
       { label: "情绪", key: "mood" },
-      { label: "伤疤", key: "scars" },
+      { label: "光照效果", key: "lighting" },
       { label: "阵营", key: "faction" },
     ],
   },
