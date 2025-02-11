@@ -436,34 +436,51 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                       <label className="block text-white mb-1">
                                         颜色
                                       </label>
-                                      <select
-                                        value={
-                                          typeof currentVal === "object" &&
-                                          currentVal !== null
-                                            ? currentVal.color || ""
-                                            : ""
-                                        }
-                                        onChange={(e) =>
-                                          handleColorChange(
-                                            section.key,
-                                            field.key,
-                                            e.target.value,
-                                          )
-                                        }
-                                        className="w-full p-3 rounded bg-white/30 text-white border border-purple-400/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                                      >
-                                        <option value="">默认</option>
-                                        {Object.values(ColorMapping).map(
-                                          (option) => (
+                                      <div className="relative">
+                                        <select
+                                          value={
+                                            typeof currentVal === "object" &&
+                                            currentVal !== null
+                                              ? currentVal.color || ""
+                                              : ""
+                                          }
+                                          onChange={(e) =>
+                                            handleColorChange(
+                                              section.key,
+                                              field.key,
+                                              e.target.value,
+                                            )
+                                          }
+                                          className="w-full p-3 rounded bg-white/30 text-white border border-purple-400/50 
+                                                   focus:outline-none focus:ring-2 focus:ring-purple-500 
+                                                   appearance-none cursor-pointer hover:bg-white/40 transition-colors"
+                                        >
+                                          {Object.values(ColorMapping).map((option) => (
                                             <option
                                               key={option.id}
                                               value={option.id}
+                                              className="bg-gray-800 text-white"
                                             >
                                               {option.zhDescription}
                                             </option>
-                                          ),
-                                        )}
-                                      </select>
+                                          ))}
+                                        </select>
+                                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                          <svg 
+                                            className="w-5 h-5 text-white" 
+                                            fill="none" 
+                                            stroke="currentColor" 
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path 
+                                              strokeLinecap="round" 
+                                              strokeLinejoin="round" 
+                                              strokeWidth={2} 
+                                              d="M19 9l-7 7-7-7"
+                                            />
+                                          </svg>
+                                        </div>
+                                      </div>
                                     </div>
                                   );
                                 }
