@@ -386,19 +386,21 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                 const baseOptions = Object.values(AvatarMapping).filter(
                                   (option) => option.appliesTo === field.key,
                                 );
-                                // 如果当前 section 是装备，则增加默认选项
-                                const options =
-                                  section.key === "equipment"
-                                    ? [
-                                        {
-                                          id: "",
-                                          displayname: "默认",
-                                          appliesTo: field.key,
-                                          allowColor: false,
-                                        },
-                                        ...baseOptions,
-                                      ]
-                                    : baseOptions;
+                                let options: AvatarMappingEntry[];
+                                if (section.key === "equipment") {
+                                  const defaultEquipmentOption: AvatarMappingEntry = {
+                                    id: "",
+                                    displayname: "默认",
+                                    appliesTo: field.key,
+                                    allowColor: false,
+                                    category: "equipment",
+                                    enGenImage: "",
+                                    zhGenImage: "",
+                                  };
+                                  options = [defaultEquipmentOption, ...baseOptions];
+                                } else {
+                                  options = baseOptions;
+                                }
                                 return (
                                   <DropdownMenu
                                     options={options}
