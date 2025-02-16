@@ -125,6 +125,10 @@ const UserProfileCard = ({
       }
     } catch (err) {
       console.error("获取角色立绘失败:", err);
+      setAvatarUrl(assetLoader.getAssetPath(
+        AssetType.IMAGE,
+        `${ImageType.CHARACTER}/cards/card_default.png`
+      ));
     } finally {
       setAvatarLoading(false);
     }
@@ -206,7 +210,7 @@ const UserProfileCard = ({
                 onError={(e) => {
                   e.currentTarget.src = assetLoader.getAssetPath(
                     AssetType.IMAGE,
-                    `${ImageType.CHARACTER}/default_avatar.png`
+                    `${ImageType.CHARACTER}/cards/card_default.png`
                   );
                 }}
               />

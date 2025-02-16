@@ -466,7 +466,7 @@ const ChatRoom = (): JSX.Element => {
         {/* 在线用户列表 - 移除 hidden md:block,让移动端也显示 */}
         <div className="w-48 bg-white/10 rounded-lg p-3">
           <h3 className="text-primary font-bold mb-3 text-sm">
-            在线玩家 ({onlineUsers.length})
+            周围的人 ({onlineUsers.length})
           </h3>
           <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
             {onlineUsers.map((user) => (
