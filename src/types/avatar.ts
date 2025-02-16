@@ -3,7 +3,7 @@
  */
 export interface CustomizableComponent {
   id: string;
-  color?: string;
+  color: string;
 }
 
 /**
@@ -28,12 +28,13 @@ export interface AvatarAppearance {
 }
 
 /**
- * 衣服系统，分为打底、外套以及配饰（支持对象形式以附加颜色信息）
+ * 衣服系统，分为上身（包含打底、外套以及配饰）和下身层
  */
 export interface AvatarClothing {
-    baseLayer: string | CustomizableComponent;   // 例如 "clothing_base_whiteT"（基础白T）
-    outerLayer?: string | CustomizableComponent;  // 例如 "clothing_outer_blue"（蓝色牛仔外套）
-    accessory?: string | CustomizableComponent;  // 例如 "clothing_accessory_scarf"（红色围巾）
+    upperBaseLayer: string | CustomizableComponent;   // 例如 "clothing_base_whiteT"（基础白T）
+    upperOuterLayer?: string | CustomizableComponent;  // 例如 "clothing_outer_blue"（蓝色牛仔外套）
+    lowerBody?: string | CustomizableComponent;     // 下身层，例如裤子或裙子
+    accessory?: string | CustomizableComponent;   // 例如 "clothing_accessory_scarf"（红色围巾）
     // 根据需求后续可增加更多层次
 }
 
@@ -50,7 +51,7 @@ export interface AvatarEquipment {
 }
 
 /**
- * 动态层，结合游戏中世界动态机制变化的信息（存储 avatarMapping 中的 id），例如情绪、光照效果、阵营等
+ * 动态层，结合游戏中世界动态机制变化的信息（存储 avatarMapping 中的 id），例如情绪、伤痕、阵营等
  */
 export interface AvatarDynamicLayer {
     mood?: string;      // 情绪："neutral"中性, "happy"开心, "sad"悲伤

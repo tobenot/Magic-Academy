@@ -332,31 +332,49 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "appliesTo": "accessory",
   "allowColor": true
 },
-"clothing_base_T": {
-  "id": "clothing_base_T",
+"clothing_long_skirt": {
+  "id": "clothing_long_skirt",
   "category": "clothing",
-  "displayname": "T恤",
-  "enGenImage": "T-shirt",
-  "zhGenImage": "T恤",
-  "appliesTo": "baseLayer",
+  "displayname": "长裙",
+  "enGenImage": "long skirt",
+  "zhGenImage": "长裙",
+  "appliesTo": "lowerBody",
   "allowColor": true
 },
-"clothing_base_polo": {
-  "id": "clothing_base_polo",
+"clothing_lower_jeans": {
+  "id": "clothing_lower_jeans",
   "category": "clothing",
-  "displayname": "polo衫",
-  "enGenImage": "polo shirt",
-  "zhGenImage": "polo衫",
-  "appliesTo": "baseLayer",
+  "displayname": "牛仔裤",
+  "enGenImage": "jeans",
+  "zhGenImage": "牛仔裤",
+  "appliesTo": "lowerBody",
   "allowColor": true
 },
-"clothing_school_shirt": {
-  "id": "clothing_school_shirt",
+"clothing_lower_shorts": {
+  "id": "clothing_lower_shorts",
   "category": "clothing",
-  "displayname": "校服衬衫",
-  "enGenImage": "school shirt",
-  "zhGenImage": "校服衬衫",
-  "appliesTo": "baseLayer",
+  "displayname": "短裤",
+  "enGenImage": "shorts",
+  "zhGenImage": "短裤",
+  "appliesTo": "lowerBody",
+  "allowColor": true
+},
+"clothing_lower_skirt": {
+  "id": "clothing_lower_skirt",
+  "category": "clothing",
+  "displayname": "短裙",
+  "enGenImage": "skirt",
+  "zhGenImage": "短裙",
+  "appliesTo": "lowerBody",
+  "allowColor": true
+},
+"clothing_lower_trousers": {
+  "id": "clothing_lower_trousers",
+  "category": "clothing",
+  "displayname": "长裤",
+  "enGenImage": "trousers",
+  "zhGenImage": "长裤",
+  "appliesTo": "lowerBody",
   "allowColor": true
 },
 "clothing_school_skirt": {
@@ -365,7 +383,34 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "校服短裙",
   "enGenImage": "school skirt",
   "zhGenImage": "校服短裙",
-  "appliesTo": "baseLayer",
+  "appliesTo": "lowerBody",
+  "allowColor": true
+},
+"clothing_base_T": {
+  "id": "clothing_base_T",
+  "category": "clothing",
+  "displayname": "T恤",
+  "enGenImage": "T-shirt",
+  "zhGenImage": "T恤",
+  "appliesTo": "upperBaseLayer",
+  "allowColor": true
+},
+"clothing_base_polo": {
+  "id": "clothing_base_polo",
+  "category": "clothing",
+  "displayname": "polo衫",
+  "enGenImage": "polo shirt",
+  "zhGenImage": "polo衫",
+  "appliesTo": "upperBaseLayer",
+  "allowColor": true
+},
+"clothing_school_shirt": {
+  "id": "clothing_school_shirt",
+  "category": "clothing",
+  "displayname": "校服衬衫",
+  "enGenImage": "school shirt",
+  "zhGenImage": "校服衬衫",
+  "appliesTo": "upperBaseLayer",
   "allowColor": true
 },
 "clothing_school_trousers": {
@@ -374,7 +419,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "校服长裤",
   "enGenImage": "school trousers",
   "zhGenImage": "校服长裤",
-  "appliesTo": "baseLayer",
+  "appliesTo": "upperBaseLayer",
   "allowColor": true
 },
 "clothing_top_hoodie": {
@@ -383,7 +428,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "连帽衫",
   "enGenImage": "hoodie",
   "zhGenImage": "连帽衫",
-  "appliesTo": "baseLayer",
+  "appliesTo": "upperBaseLayer",
   "allowColor": true
 },
 "clothing_casual_jacket": {
@@ -392,7 +437,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "夹克",
   "enGenImage": "jacket",
   "zhGenImage": "夹克",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_dress_evening": {
@@ -401,7 +446,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "晚礼服",
   "enGenImage": "evening gown",
   "zhGenImage": "晚礼服",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_dress_red": {
@@ -410,7 +455,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "连衣裙",
   "enGenImage": "dress",
   "zhGenImage": "连衣裙",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_formal_suit": {
@@ -419,7 +464,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "西服",
   "enGenImage": "suit",
   "zhGenImage": "西服",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_jacket_leather": {
@@ -428,7 +473,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "皮夹克",
   "enGenImage": "leather jacket",
   "zhGenImage": "皮夹克",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_outer_blue": {
@@ -437,7 +482,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "外套",
   "enGenImage": "jacket",
   "zhGenImage": "外套",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_school_blazer": {
@@ -446,7 +491,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "校服外套",
   "enGenImage": "school blazer",
   "zhGenImage": "校服外套",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_traditional_hanfu": {
@@ -455,7 +500,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "汉服",
   "enGenImage": "hanfu",
   "zhGenImage": "汉服",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "clothing_traditional_kimono": {
@@ -464,7 +509,7 @@ export const AvatarMapping: Record<string, AvatarMappingEntry> = {
   "displayname": "和服",
   "enGenImage": "kimono",
   "zhGenImage": "和服",
-  "appliesTo": "outerLayer",
+  "appliesTo": "upperOuterLayer",
   "allowColor": true
 },
 "mood_angry": {

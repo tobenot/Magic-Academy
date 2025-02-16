@@ -38,8 +38,9 @@ const sections: { title: string; key: string; fields: FieldDefinition[] }[] = [
     title: "服饰",
     key: "clothing",
     fields: [
-      { label: "打底", key: "baseLayer" },
-      { label: "外套", key: "outerLayer" },
+      { label: "上身打底", key: "upperBaseLayer" },
+      { label: "外套", key: "upperOuterLayer" },
+      { label: "下身", key: "lowerBody" },
       { label: "配饰", key: "accessory" },
     ],
   },
@@ -429,6 +430,30 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                                   (option) => option.id === currentId,
                                 );
 
+                                // 如果当前选项允许颜色选择，但还没有颜色值，则设置默认颜色
+                                if (currentOption?.allowColor && typeof currentVal === "string") {
+                                  setAppearance((prev) => ({
+                                    ...prev,
+                                    [section.key]: {
+                                      ...(prev as any)[section.key],
+                                      [field.key]: {
+                                        id: currentVal,
+                                        color: "color_black",
+                                      },
+                                    },
+                                  }));
+                                }
+                                // 如果当前选项不允许颜色选择，但有颜色值，则移除颜色字段
+                                else if (!currentOption?.allowColor && typeof currentVal === "object") {
+                                  setAppearance((prev) => ({
+                                    ...prev,
+                                    [section.key]: {
+                                      ...(prev as any)[section.key],
+                                      [field.key]: currentVal.id,
+                                    },
+                                  }));
+                                }
+
                                 // 只在允许颜色选择的选项下显示颜色选择器
                                 if (currentOption?.allowColor) {
                                   return (
@@ -511,7 +536,7 @@ const AvatarEditor: React.FC<AvatarEditorProps> = ({
                   disabled={saving}
                   className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition"
                 >
-                  {saving ? "保存中..." : "保存"}
+                  {saving ? "保存中..." : "保存并生成立绘"}
                 </button>
                 <button
                   type="button"
