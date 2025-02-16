@@ -15,13 +15,29 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
 const profileCache: Record<number, { data: UserProfile; timestamp: number }> =
   {};
 
-// 提取关闭按钮组件
+// 修改 CloseButton 组件样式
 const CloseButton = ({ onClose }: { onClose: () => void }): JSX.Element => (
   <button
     onClick={onClose}
-    className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 flex items-center justify-center transition-colors"
+    className="absolute top-[-5vh] right-0 z-10 w-[4vh] h-[4vh] rounded-full 
+               bg-white/10 hover:bg-white/20 backdrop-blur-sm
+               flex items-center justify-center transition-all duration-200
+               border border-white/20 hover:border-white/40
+               group"
   >
-    <span className="text-white/80 hover:text-white">×</span>
+    <svg 
+      className="w-[2.5vh] h-[2.5vh] text-white/60 group-hover:text-white/90 transition-colors" 
+      fill="none" 
+      stroke="currentColor" 
+      viewBox="0 0 24 24"
+    >
+      <path 
+        strokeLinecap="round" 
+        strokeLinejoin="round" 
+        strokeWidth={2} 
+        d="M6 18L18 6M6 6l12 12"
+      />
+    </svg>
   </button>
 );
 
@@ -170,6 +186,8 @@ const UserProfileCard = ({
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
       <div className="relative w-[95%] max-w-[1200px] mx-auto flex gap-[3%] items-center justify-center">
+        <CloseButton onClose={onClose} />
+
         <div className="flex flex-col items-center">
           <div className="text-[2vh] text-white/80 font-cinzel mb-[1vh]">
             角色外观
@@ -208,8 +226,6 @@ const UserProfileCard = ({
           </div>
 
           <div className="relative h-[70vh] aspect-[2/3] flex-none bg-gradient-to-b from-white/10 to-white/5 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden">
-            <CloseButton onClose={onClose} />
-
             <div className="relative w-full h-full">
               {!imageLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
