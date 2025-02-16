@@ -35,6 +35,8 @@ const UserProfileCard = ({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [showInteractionMenu, setShowInteractionMenu] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarLoading, setAvatarLoading] = useState(true);
 
   const currentUserId = Number(localStorage.getItem("userId") || "0");
   const isOwnProfile = currentUserId === userId;
@@ -86,9 +88,36 @@ const UserProfileCard = ({
     }
   }, [userId]);
 
+  const fetchAvatarImage = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/avatar/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("获取角色立绘失败");
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setAvatarUrl(data.data.imageUrl);
+      }
+    } catch (err) {
+      console.error("获取角色立绘失败:", err);
+    } finally {
+      setAvatarLoading(false);
+    }
+  }, [userId]);
+
   useEffect(() => {
     fetchProfile();
-  }, [fetchProfile]);
+    fetchAvatarImage();
+  }, [fetchProfile, fetchAvatarImage]);
 
   if (loading) {
     return (
@@ -140,133 +169,160 @@ const UserProfileCard = ({
 
   return (
     <div className="fixed inset-0 bg-gradient-to-br from-black/80 to-gray-900/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
-      <div className="relative max-w-md w-full mx-4 bg-gradient-to-b from-white/10 to-white/5 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden transform transition-all">
-        <CloseButton onClose={onClose} />
-
-        {/* 立绘容器 */}
-        <div className="relative aspect-[3/4] w-full overflow-hidden">
-          {!imageLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-              <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          )}
-          <img
-            src={getCardImagePath(profile.cardImage)}
-            alt="身份牌立绘"
-            className={`w-full h-full object-cover transition-all duration-500 ${
-              imageLoaded ? "scale-100 opacity-100" : "scale-110 opacity-0"
-            }`}
-            onLoad={() => setImageLoaded(true)}
-            onError={(e) => {
-              e.currentTarget.src = getCardImagePath("default");
-              setImageLoaded(true);
-            }}
-          />
-          {/* 渐变遮罩 */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        </div>
-
-        {/* 用户信息 */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-          <div className="space-y-4">
-            {/* 用户名和状态 */}
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <h3 className="text-2xl font-cinzel font-bold text-primary">
-                  {profile.nickname}
-                </h3>
+      <div className="relative w-[95%] max-w-[1200px] mx-auto flex gap-[3%] items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="text-[2vh] text-white/80 font-cinzel mb-[1vh]">
+            角色外观
+          </div>
+          
+          <div className="relative h-[70vh] aspect-[2/3] flex-none bg-gradient-to-b from-white/10 to-white/5 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden">
+            {avatarLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
               </div>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  profile.status === "online"
-                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                    : profile.status === "away"
-                      ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                      : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
-                }`}
-              >
-                {profile.status === "online"
-                  ? "在线"
-                  : profile.status === "away"
-                    ? "离开"
-                    : "离线"}
-              </span>
-            </div>
-
-            {/* 称号 */}
-            {profile.title && (
-              <div className="text-sm text-primary/80 font-cinzel">
-                {profile.title}
+            ) : avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="角色立绘"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = assetLoader.getAssetPath(
+                    AssetType.IMAGE,
+                    `${ImageType.CHARACTER}/default_avatar.png`
+                  );
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-white/50">
+                暂无立绘
               </div>
             )}
-
-            {/* 加入时间 */}
-            <div className="text-sm text-gray-400 font-noto-serif">
-              加入时间:{" "}
-              {formatDistance(profile.joinDate, new Date(), { locale: zhCN })}前
-            </div>
-
-            {/* 个人简介 */}
-            {profile.bio && (
-              <div className="mt-4 p-3 bg-white/5 rounded-lg border border-white/10 font-noto-serif">
-                {profile.bio}
-              </div>
-            )}
-
-            {/* 统计信息 */}
-            {profile.statistics && (
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                  <div className="text-xs text-gray-400">发言数</div>
-                  <div className="text-xl font-cinzel text-primary mt-1">
-                    {profile.statistics.messageCount || 0}
-                  </div>
-                </div>
-                <div className="bg-white/5 p-3 rounded-lg border border-white/10">
-                  <div className="text-xs text-gray-400">在线时长</div>
-                  <div className="text-xl font-cinzel text-primary mt-1">
-                    {Math.floor((profile.statistics.totalOnlineTime || 0) / 60)}
-                    <span className="text-sm ml-1">小时</span>
-                  </div>
-                </div>
-              </div>
-            )}
+            
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           </div>
         </div>
 
-        {/* 互动入口按钮 */}
-        <div className="absolute bottom-6 right-6">
+        <div className="flex flex-col items-center">
+          <div className="text-[2vh] text-white/80 font-cinzel mb-[1vh]">
+            身份牌
+          </div>
+
+          <div className="relative h-[70vh] aspect-[2/3] flex-none bg-gradient-to-b from-white/10 to-white/5 rounded-2xl shadow-2xl backdrop-blur-md overflow-hidden">
+            <CloseButton onClose={onClose} />
+
+            <div className="relative w-full h-full">
+              {!imageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
+                </div>
+              )}
+              <img
+                src={getCardImagePath(profile.cardImage)}
+                alt="身份牌立绘"
+                className={`w-full h-full object-cover transition-all duration-500 ${
+                  imageLoaded ? "scale-100 opacity-100" : "scale-110 opacity-0"
+                }`}
+                onLoad={() => setImageLoaded(true)}
+                onError={(e) => {
+                  e.currentTarget.src = getCardImagePath("default");
+                  setImageLoaded(true);
+                }}
+              />
+              
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+              <div className="absolute bottom-0 left-0 right-0 p-[5%] text-white">
+                <div className="space-y-[2%]">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[2.5vh] font-cinzel font-bold text-primary">
+                      {profile.nickname}
+                    </h3>
+                    <span
+                      className={`px-[1vh] py-[0.5vh] rounded-full text-[1.5vh] font-medium ${
+                        profile.status === "online"
+                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                          : profile.status === "away"
+                            ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                            : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
+                      }`}
+                    >
+                      {profile.status === "online"
+                        ? "在线"
+                        : profile.status === "away"
+                          ? "离开"
+                          : "离线"}
+                    </span>
+                  </div>
+
+                  {profile.title && (
+                    <div className="text-[1.8vh] text-primary/80 font-cinzel">
+                      {profile.title}
+                    </div>
+                  )}
+
+                  <div className="text-[1.6vh] text-gray-400 font-noto-serif">
+                    加入时间: {formatDistance(profile.joinDate, new Date(), { locale: zhCN })}前
+                  </div>
+
+                  {profile.bio && (
+                    <div className="mt-[2%] p-[3%] bg-white/5 rounded-lg border border-white/10 font-noto-serif text-[1.6vh]">
+                      {profile.bio}
+                    </div>
+                  )}
+
+                  {profile.statistics && (
+                    <div className="grid grid-cols-2 gap-[3%] mt-[2%]">
+                      <div className="bg-white/5 p-[3%] rounded-lg border border-white/10">
+                        <div className="text-[1.4vh] text-gray-400">发言数</div>
+                        <div className="text-[1.8vh] font-cinzel text-primary">
+                          {profile.statistics.messageCount || 0}
+                        </div>
+                      </div>
+                      <div className="bg-white/5 p-[3%] rounded-lg border border-white/10">
+                        <div className="text-[1.4vh] text-gray-400">在线时长</div>
+                        <div className="text-[1.8vh] font-cinzel text-primary">
+                          {Math.floor((profile.statistics.totalOnlineTime || 0) / 60)}
+                          <span className="text-[1.4vh] ml-1">小时</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 按钮组 - 从左下角开始排列 */}
+        <div className="absolute bottom-[-8vh] left-0 flex gap-[2vh]">
+          {isOwnProfile && (
+            <button
+              onClick={() => setShowAvatarEditor(true)}
+              className="px-[3vh] py-[1.5vh] bg-primary hover:bg-secondary text-black rounded-full transition text-[1.8vh]"
+            >
+              修改外观
+            </button>
+          )}
           <button
             onClick={() => setShowInteractionMenu(true)}
-            className="px-4 py-2 bg-primary hover:bg-secondary text-black rounded-full transition"
+            className="px-[3vh] py-[1.5vh] bg-primary hover:bg-secondary text-black rounded-full transition text-[1.8vh]"
           >
             互动
           </button>
         </div>
-
-        {/* 新增：修改外观按钮，只在自己的用户资料中显示 */}
-        {isOwnProfile && (
-          <button
-            onClick={() => setShowAvatarEditor(true)}
-            className="absolute bottom-6 left-6 px-4 py-2 bg-primary hover:bg-secondary text-black rounded-full transition"
-          >
-            修改外观
-          </button>
-        )}
-
-        {showInteractionMenu && (
-          <InteractionMenu
-            userId={userId}
-            onClose={() => setShowInteractionMenu(false)}
-            onActionSuccess={() => {
-              setShowInteractionMenu(false);
-              onClose();
-            }}
-          />
-        )}
       </div>
 
-      {/* 新增：条件渲染 AvatarEditorContainer 作为模态框 */}
+      {showInteractionMenu && (
+        <InteractionMenu
+          userId={userId}
+          onClose={() => setShowInteractionMenu(false)}
+          onActionSuccess={() => {
+            setShowInteractionMenu(false);
+            onClose();
+          }}
+        />
+      )}
+
       {showAvatarEditor && (
         <AvatarEditorContainer onClose={() => setShowAvatarEditor(false)} />
       )}
