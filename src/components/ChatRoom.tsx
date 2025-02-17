@@ -51,9 +51,7 @@ const ChatRoom = (): JSX.Element => {
   const [cgModalVisible, setCgModalVisible] = useState<boolean>(false);
   const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
   // 新增状态：跟踪正在生成CG图片的消息ID列表
-  const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>(
-    [],
-  );
+  const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>([]);
 
   // 处理消息发送
   const sendMessage = useCallback((): void => {
@@ -79,43 +77,37 @@ const ChatRoom = (): JSX.Element => {
         ]);
         break;
 
-      case WSMessageType.CHAT_HISTORY:
-        {
-          // 按照新的接口格式解析历史消息
-          const historyData = message.data as WSChatHistoryData;
-          if (Array.isArray(historyData.messages)) {
-            const historyMessages = historyData.messages.map(
-              (msg: WSServerMessage) => ({
-                type: msg.data.type,
-                messageId: msg.messageId,
-                username:
-                  msg.data.initiatorName ||
-                  (msg.data.type === "system" ? "System" : "未知用户"),
-                content: msg.data.message, // 此处message为必填字段
-                timestamp: msg.timestamp, // 使用外层的timestamp值
-                initiatorId: msg.data.initiatorId,
-                actionId: msg.data.actionId,
-                status: msg.data.status,
-                duration:
-                  msg.data.duration && msg.data.duration > 0
-                    ? msg.data.duration
-                    : undefined,
-                targetId: msg.data.targetId,
-                targetName: msg.data.targetName,
-                startTime: msg.data.startTime,
-                initialRemaining:
-                  msg.data.duration && msg.data.startTime
-                    ? Math.max(
-                        msg.data.duration - (Date.now() - msg.data.startTime),
-                        0,
-                      )
-                    : undefined,
-              }),
-            );
-            setMessages((prev) => [...historyMessages, ...prev]);
-          }
+      case WSMessageType.CHAT_HISTORY: {
+        // 按照新的接口格式解析历史消息
+        const historyData = message.data as WSChatHistoryData;
+        if (Array.isArray(historyData.messages)) {
+          const historyMessages = historyData.messages.map((msg: WSServerMessage) => ({
+            type: msg.data.type,
+            messageId: msg.messageId,
+            username:
+              msg.data.initiatorName ||
+              (msg.data.type === "system" ? "System" : "未知用户"),
+            content: msg.data.message, // 此处message为必填字段
+            timestamp: msg.timestamp, // 使用外层的timestamp值
+            initiatorId: msg.data.initiatorId,
+            actionId: msg.data.actionId,
+            status: msg.data.status,
+            duration:
+              msg.data.duration && msg.data.duration > 0
+                ? msg.data.duration
+                : undefined,
+            targetId: msg.data.targetId,
+            targetName: msg.data.targetName,
+            startTime: msg.data.startTime,
+            initialRemaining:
+              msg.data.duration && msg.data.startTime
+                ? Math.max(msg.data.duration - (Date.now() - msg.data.startTime), 0)
+                : undefined,
+          }));
+          setMessages((prev) => [...historyMessages, ...prev]);
         }
         break;
+      }
 
       case WSMessageType.INTERACTION:
         setMessages((prev) => [
@@ -135,11 +127,7 @@ const ChatRoom = (): JSX.Element => {
             startTime: message.data.startTime,
             initialRemaining:
               message.data.duration && message.data.startTime
-                ? Math.max(
-                    message.data.duration -
-                      (Date.now() - message.data.startTime),
-                    0,
-                  )
+                ? Math.max(message.data.duration - (Date.now() - message.data.startTime), 0)
                 : undefined,
             initiatorId: message.data.initiatorId,
             targetId: message.data.targetId,
@@ -177,21 +165,15 @@ const ChatRoom = (): JSX.Element => {
     console.error("WebSocket 错误:", error);
   }, []);
 
-  const handleInputChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>): void => {
-      setInputMessage(e.target.value);
-    },
-    [],
-  );
+  const handleInputChange = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
+    setInputMessage(e.target.value);
+  }, []);
 
-  const handleKeyPress = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>): void => {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
-    },
-    [sendMessage],
-  );
+  const handleKeyPress = useCallback((e: KeyboardEvent<HTMLInputElement>): void => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
+  }, [sendMessage]);
 
   // 修改后的生成交互CG图片函数
   const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
@@ -210,7 +192,7 @@ const ChatRoom = (): JSX.Element => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ interactionMessageId }),
-        },
+        }
       );
 
       if (!response.ok) {
@@ -227,7 +209,7 @@ const ChatRoom = (): JSX.Element => {
     } finally {
       // 移除生成中的状态
       setGeneratingCGMessages((prev) =>
-        prev.filter((id) => id !== interactionMessageId),
+        prev.filter((id) => id !== interactionMessageId)
       );
     }
   }, []);
@@ -239,14 +221,14 @@ const ChatRoom = (): JSX.Element => {
       // 注意：getOnlineUsers接口返回的对象目前只包含 id 和 nickname，
       // 为避免 TS 错误，这里为缺失的字段直接赋默认值，
       // 请与后端确认是否需要返回status和lastActive字段。
-      const transformed: WSUser[] = (
-        users as Array<{ id: number; nickname: string }>
-      ).map((user) => ({
-        id: user.id,
-        nickname: user.nickname,
-        status: "online", // 默认赋值
-        lastActive: Date.now(), // 默认赋值
-      }));
+      const transformed: WSUser[] = (users as Array<{ id: number; nickname: string }>).map(
+        (user) => ({
+          id: user.id,
+          nickname: user.nickname,
+          status: "online", // 默认赋值
+          lastActive: Date.now(), // 默认赋值
+        })
+      );
       setOnlineUsers(transformed);
     } catch (error) {
       console.error("获取在线用户列表失败:", error);
@@ -278,14 +260,13 @@ const ChatRoom = (): JSX.Element => {
   const handleUserOffline = useCallback((event: WSServerMessage) => {
     if (event.type !== WSMessageType.USER_OFFLINE) return;
     setOnlineUsers((prev) =>
-      prev.filter((user) => user.id !== event.data.initiatorId),
+      prev.filter((user) => user.id !== event.data.initiatorId)
     );
   }, []);
 
   // 用户列表更新处理函数，转换用户数据
   const handleUserListUpdate = useCallback((event: WSServerMessage) => {
-    if (event.type !== WSMessageType.USER_LIST_UPDATE || !event.data.users)
-      return;
+    if (event.type !== WSMessageType.USER_LIST_UPDATE || !event.data.users) return;
     const updatedUsers: WSUser[] = event.data.users.map((user) => ({
       ...user,
       status: user.status || "online",
@@ -391,11 +372,12 @@ const ChatRoom = (): JSX.Element => {
       chat: "bg-white/5",
       system: "bg-gray-700/50 text-gray-300",
       interaction: classNames("transition-all", {
-        "bg-primary/10 border border-primary/20":
-          msg.status === "active" && msg.duration,
+        "bg-primary/10 border border-primary/20": msg.status === "active" && msg.duration,
         "bg-white/5": msg.status === "instant" || !msg.duration,
         "bg-white/5 opacity-75": msg.status === "completed",
       }),
+      roomUpdate: "bg-green-500",
+      heartbeat: "bg-blue-500",
     }[msg.type];
 
     // 使用初始化时记录的剩余持续时间
@@ -515,17 +497,11 @@ const ChatRoom = (): JSX.Element => {
       </div>
 
       {selectedUserId && (
-        <UserProfileCard
-          userId={selectedUserId}
-          onClose={() => setSelectedUserId(null)}
-        />
+        <UserProfileCard userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
       )}
 
       {cgModalVisible && cgImageUrl && (
-        <CGModal
-          imageUrl={cgImageUrl}
-          onClose={() => setCgModalVisible(false)}
-        />
+        <CGModal imageUrl={cgImageUrl} onClose={() => setCgModalVisible(false)} />
       )}
     </div>
   );

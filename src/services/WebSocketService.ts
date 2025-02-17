@@ -149,6 +149,7 @@ export class WebSocketService extends EventEmitter {
         type: WSMessageType.CHAT,
         timestamp: Date.now(),
         data: {
+          type: "chat",
           content,
         },
       };
@@ -169,6 +170,7 @@ export class WebSocketService extends EventEmitter {
           type: WSMessageType.INTERACTION,
           timestamp: Date.now(),
           data: {
+            type: "interaction",
             actionId,
             targetId,
           },
@@ -237,7 +239,9 @@ export class WebSocketService extends EventEmitter {
       const heartbeat: WSClientMessage = {
         type: WSMessageType.HEARTBEAT,
         timestamp: Date.now(),
-        data: {},
+        data: {
+          type: "heartbeat",
+        },
       };
       this.ws.send(JSON.stringify(heartbeat));
     }
