@@ -18,6 +18,8 @@ import {
 import UserProfileCard from "./UserProfile";
 import classNames from "classnames";
 import CGModal from "./CGModal";
+import { MapService } from "../services/MapService";
+import { MovementService } from "../services/MovementService";
 
 interface Message {
   type: WSMessageData["type"];
@@ -35,12 +37,26 @@ interface Message {
   targetName?: string;
 }
 
+// 新增：地图房间数据接口
+interface RoomInfo {
+  id: string;
+  name: string;
+  description: string;
+  connections: {
+    targetRoomId: string;
+    direction: string;
+  }[];
+}
+
 const ChatRoom = (): JSX.Element => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [connected, setConnected] = useState(false);
   const [username, setUsername] = useState<string>("");
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
+
+  // 新增：地图状态，用于保存从后端接口获取的房间数据
+  const [roomMap, setRoomMap] = useState<RoomInfo | null>(null);
 
   // 使用 useMemo 保持 AuthService 实例稳定
   const authService = useMemo(() => new AuthService(), []);
@@ -52,6 +68,11 @@ const ChatRoom = (): JSX.Element => {
   const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
   // 新增状态：跟踪正在生成CG图片的消息ID列表
   const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>([]);
+
+  // 使用 MapService 来获取地图数据，降低耦合
+  const mapService = useMemo(() => new MapService(), []);
+  // 实例化 MovementService
+  const movementService = useMemo(() => new MovementService(), []);
 
   // 处理消息发送
   const sendMessage = useCallback((): void => {
@@ -215,12 +236,11 @@ const ChatRoom = (): JSX.Element => {
   }, []);
 
   // 定义获取在线用户列表的函数
-  const fetchOnlineUsers = useCallback(async () => {
+  const fetchNearbyUsers = useCallback(async () => {
     try {
-      const users = await authService.getOnlineUsers();
-      // 注意：getOnlineUsers接口返回的对象目前只包含 id 和 nickname，
-      // 为避免 TS 错误，这里为缺失的字段直接赋默认值，
-      // 请与后端确认是否需要返回status和lastActive字段。
+      const users = await authService.getNearbyUsers();
+      // 注意：getNearbyUsers接口返回的对象包含 id, nickname 和 userType，
+      // 这里直接使用返回值，如果需要，可进行后续处理
       const transformed: WSUser[] = (users as Array<{ id: number; nickname: string }>).map(
         (user) => ({
           id: user.id,
@@ -231,7 +251,7 @@ const ChatRoom = (): JSX.Element => {
       );
       setOnlineUsers(transformed);
     } catch (error) {
-      console.error("获取在线用户列表失败:", error);
+      console.error("获取附近在线用户列表失败:", error);
     }
   }, [authService]);
 
@@ -275,6 +295,17 @@ const ChatRoom = (): JSX.Element => {
     setOnlineUsers(updatedUsers);
   }, []);
 
+  // 使用 MapService 来获取地图数据，降低耦合
+  const fetchMapData = useCallback(async () => {
+    try {
+      const room = await mapService.getMap();
+      console.log("地图接口返回数据:", room); // 调试日志
+      setRoomMap(room);
+    } catch (error: any) {
+      console.error("获取地图信息失败:", error);
+    }
+  }, [mapService]);
+
   // WebSocket 连接和事件处理
   useEffect(() => {
     const checkAuth = async () => {
@@ -311,8 +342,8 @@ const ChatRoom = (): JSX.Element => {
 
           // 添加请求在线用户列表的处理
           ws.on("request_online_users", () => {
-            console.log("[WebSocket] 连接成功,获取在线用户列表");
-            fetchOnlineUsers();
+            console.log("[WebSocket] 连接成功,获取附近用户列表");
+            fetchNearbyUsers();
           });
 
           ws.connect();
@@ -325,7 +356,7 @@ const ChatRoom = (): JSX.Element => {
             ws.off(WSMessageType.USER_ONLINE, handleUserOnline);
             ws.off(WSMessageType.USER_OFFLINE, handleUserOffline);
             ws.off(WSMessageType.USER_LIST_UPDATE, handleUserListUpdate);
-            ws.off("request_online_users", fetchOnlineUsers);
+            ws.off("request_online_users", fetchNearbyUsers);
           };
         } else {
           console.error("Invalid user data:", user);
@@ -343,11 +374,16 @@ const ChatRoom = (): JSX.Element => {
     handleConnected,
     handleDisconnect,
     handleError,
-    fetchOnlineUsers,
+    fetchNearbyUsers,
     handleUserOnline,
     handleUserOffline,
     handleUserListUpdate,
   ]);
+
+  // 新增 useEffect，组件加载时获取地图数据
+  useEffect(() => {
+    fetchMapData();
+  }, [fetchMapData]);
 
   // 更新页面标题
   useEffect(() => {
@@ -359,12 +395,12 @@ const ChatRoom = (): JSX.Element => {
 
   // 修改获取在线用户列表的函数
   useEffect(() => {
-    fetchOnlineUsers();
-    // 减少轮询间隔到 10 秒,因为这是实时在线用户
-    const interval = setInterval(fetchOnlineUsers, 10000);
+    fetchNearbyUsers();
+    // 每10秒轮询一次，获取当前房间内在线的用户数据
+    const interval = setInterval(fetchNearbyUsers, 10000);
 
     return () => clearInterval(interval);
-  }, [fetchOnlineUsers]);
+  }, [fetchNearbyUsers]);
 
   // 修改消息渲染部分
   const renderMessage = (msg: Message) => {
@@ -436,8 +472,50 @@ const ChatRoom = (): JSX.Element => {
     );
   };
 
+  // 新增 handleMove 方法
+  const handleMove = useCallback(async (targetRoomId: string) => {
+    try {
+      const characterIdStr = localStorage.getItem("userId");
+      if (!characterIdStr) {
+        throw new Error("未登录 - 无有效的 userId");
+      }
+      const characterId = Number(characterIdStr);
+      if (!roomMap || !roomMap.id) {
+        throw new Error("当前房间信息不可用");
+      }
+      if (!window.confirm(`确定要移动到 ${targetRoomId} 吗？`)) return;
+
+      await movementService.move(characterId, roomMap.id, targetRoomId, "normal");
+      alert("角色移动成功");
+      // 如果移动成功，则重新刷新地图数据和附近的用户列表
+      fetchMapData();
+      fetchNearbyUsers();
+    } catch (error: any) {
+      alert(`角色移动失败: ${error.message}`);
+    }
+  }, [roomMap, fetchMapData, movementService, fetchNearbyUsers]);
+
   return (
     <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
+      {/* 新增：显示当前地图和附近的链接 */}
+      {roomMap && (
+        <div className="map-info text-white bg-gray-800 p-3 rounded mb-4">
+          <h2 className="text-xl font-bold">{roomMap.name}</h2>
+          <p className="mt-1">{roomMap.description}</p>
+          <div className="flex gap-2 mt-2">
+            {roomMap.connections.map((conn, index) => (
+              <button 
+                key={index}
+                className="px-2 py-1 bg-blue-500 hover:bg-blue-600 rounded"
+                onClick={() => handleMove(conn.targetRoomId)}
+              >
+                {conn.direction}: {conn.targetRoomId}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {!connected && (
         <div className="text-yellow-500 text-center mb-2">
           正在连接聊天服务器...

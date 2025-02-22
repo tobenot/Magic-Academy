@@ -21,6 +21,13 @@ interface OnlineUser {
   nickname: string;
 }
 
+// 新增：当前房间内在线角色接口
+interface NearbyUser {
+  id: number;
+  nickname: string;
+  userType: string;
+}
+
 export class AuthService {
   private readonly apiBaseUrl: string;
 
@@ -135,6 +142,23 @@ export class AuthService {
 
     if (!response.ok) {
       throw new Error("获取在线用户列表失败");
+    }
+
+    return response.json();
+  }
+
+  async getNearbyUsers(): Promise<NearbyUser[]> {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("未登录");
+
+    const response = await fetch(`${this.apiBaseUrl}/user/nearby`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("获取房间内在线角色列表失败");
     }
 
     return response.json();
