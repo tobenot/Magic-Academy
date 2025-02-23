@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { InventoryItemDto } from '../types/inventory';
+import { WebSocketService } from '../services/WebSocketService';
 
 // 物品类型图标映射
 const typeIcons: Record<string, string> = {
@@ -60,29 +61,43 @@ const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
     fetchInventory();
   }, [fetchInventory]);
 
-  // 处理物品交互
+  // 修改：处理物品交互
   const handleItemInteraction = async (item: StackedItem, action: string) => {
     try {
-      // 根据交互类型执行不同操作
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/inventory/update`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ item: item.instances[0] }) // 使用堆叠中的第一个物品实例
-      });
-
-      if (!response.ok) {
-        throw new Error('物品交互失败');
+      const wsService = WebSocketService.getInstance();
+      if (!wsService) {
+        throw new Error('WebSocket服务未连接');
       }
 
-      // 刷新物品栏
-      fetchInventory();
+      // 构造物品ID
+      const targetId = `inventory:${item.id}`;
+      
+      // 发送交互请求
+      await wsService.sendInteraction(action, targetId);
+
+      // 关闭物品栏面板
+      onClose();
+      
     } catch (error) {
       console.error('物品交互失败:', error);
     }
   };
+
+  // 添加：监听物品栏更新消息
+  useEffect(() => {
+    const wsService = WebSocketService.getInstance();
+    if (!wsService) return;
+
+    const handleInventoryUpdate = () => {
+      fetchInventory();
+    };
+
+    wsService.on('inventory_update', handleInventoryUpdate);
+
+    return () => {
+      wsService.off('inventory_update', handleInventoryUpdate);
+    };
+  }, [fetchInventory]);
 
   // 获取可用的物品类型列表
   const itemTypes = ['all', ...new Set(items.map(item => item.type))];
