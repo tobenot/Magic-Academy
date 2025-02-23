@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { InventoryItemDto } from '../types/inventory';
 import { WebSocketService } from '../services/WebSocketService';
+import { itemsConfig } from '../config/items';
 
 // 物品类型图标映射
 const typeIcons: Record<string, string> = {
@@ -17,16 +18,16 @@ interface InventoryPanelProps {
   onClose: () => void;
 }
 
-// 新增：堆叠物品接口
-interface StackedItem extends InventoryItemDto {
+// 新增：简化的物品数据接口
+interface SimpleInventoryItem {
+  id: string;
   quantity: number;
-  instances: InventoryItemDto[];
 }
 
 const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
   const [items, setItems] = useState<InventoryItemDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<StackedItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<InventoryItemDto | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [totalWeight, setTotalWeight] = useState(0);
 
@@ -45,9 +46,24 @@ const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
 
       const result = await response.json();
       if (result.success) {
-        setItems(result.data);
-        // 计算总重量
-        const weight = result.data.reduce((acc: number, item: InventoryItemDto) => acc + item.weight, 0);
+        // 转换简化的物品数据为完整的物品数据
+        const fullItems: InventoryItemDto[] = result.data.map((item: SimpleInventoryItem) => {
+          const itemConfig = itemsConfig[item.id];
+          if (!itemConfig) {
+            console.error(`未找到物品配置: ${item.id}`);
+            return null;
+          }
+          return {
+            ...itemConfig,
+            quantity: item.quantity
+          };
+        }).filter(Boolean);
+
+        setItems(fullItems);
+        
+        // 计算总重量（考虑数量）
+        const weight = fullItems.reduce((acc, item) => 
+          acc + (item.weight * (item.quantity || 1)), 0);
         setTotalWeight(weight);
       }
     } catch (error) {
@@ -62,7 +78,7 @@ const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
   }, [fetchInventory]);
 
   // 修改：处理物品交互
-  const handleItemInteraction = async (item: StackedItem, action: string) => {
+  const handleItemInteraction = async (item: InventoryItemDto, action: string) => {
     try {
       const wsService = WebSocketService.getInstance();
       if (!wsService) {
@@ -102,33 +118,10 @@ const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
   // 获取可用的物品类型列表
   const itemTypes = ['all', ...new Set(items.map(item => item.type))];
 
-  // 堆叠相同ID的物品
-  const stackItems = (items: InventoryItemDto[]): StackedItem[] => {
-    const stacks = new Map<string, StackedItem>();
-    
-    items.forEach(item => {
-      if (stacks.has(item.id)) {
-        const stack = stacks.get(item.id)!;
-        stack.quantity += 1;
-        stack.instances.push(item);
-      } else {
-        stacks.set(item.id, {
-          ...item,
-          quantity: 1,
-          instances: [item]
-        });
-      }
-    });
-
-    return Array.from(stacks.values());
-  };
-
-  // 过滤并堆叠物品列表
-  const filteredItems = stackItems(
-    filter === 'all' 
-      ? items 
-      : items.filter(item => item.type === filter)
-  );
+  // 过滤物品列表
+  const filteredItems = filter === 'all' 
+    ? items 
+    : items.filter(item => item.type === filter);
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
@@ -195,9 +188,9 @@ const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
                   </div>
                   <div className="text-white font-medium">{item.name}</div>
                   <div className="text-sm text-gray-400">
-                    重量: {(item.weight * item.quantity).toFixed(1)} kg
+                    重量: {(item.weight * (item.quantity || 1)).toFixed(1)} kg
                   </div>
-                  {item.quantity > 1 && (
+                  {(item.quantity || 1) > 1 && (
                     <div className="absolute top-2 right-2 bg-primary/80 text-black px-2 py-1 rounded-full text-xs font-bold">
                       ×{item.quantity}
                     </div>
@@ -216,7 +209,7 @@ const InventoryPanel = ({ onClose }: InventoryPanelProps): JSX.Element => {
             <div className="w-72 bg-black/20 p-4 rounded-lg overflow-y-auto">
               <h3 className="text-xl font-cinzel text-primary mb-4 flex items-center justify-between">
                 <span>{selectedItem.name}</span>
-                {selectedItem.quantity > 1 && (
+                {(selectedItem.quantity || 1) > 1 && (
                   <span className="text-sm bg-primary/80 text-black px-2 py-1 rounded-full">
                     ×{selectedItem.quantity}
                   </span>

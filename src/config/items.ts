@@ -1,6 +1,6 @@
-import { Item } from '../models/Item';
+import { InventoryItemDto } from '../types/inventory';
 
-export const itemsConfig: Record<string, Item> = {
+export const itemsConfig: Record<string, InventoryItemDto> = {
     apple: {
         id: 'apple',
         name: '苹果',

@@ -162,7 +162,7 @@ export class WebSocketService extends EventEmitter {
 
   public async sendInteraction(
     actionId: string,
-    targetId?: number,
+    targetId?: number | string,
   ): Promise<void> {
     if (this.ws?.readyState === WebSocket.OPEN) {
       try {
