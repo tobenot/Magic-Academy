@@ -448,10 +448,10 @@ const ChatRoom = (): JSX.Element => {
   }, [fetchNearbyUsers]);
 
   // 新增：处理交互物交互的方法
-  const handleInteraction = useCallback(async (itemId: string, action: string) => {
+  const handleInteraction = useCallback(async (interactableId: string, action: string) => {
     if (!wsService) return;
     try {
-      await wsService.sendInteraction(action, itemId);
+      await wsService.sendInteraction(action, interactableId);
       // 交互成功后刷新交互物列表
       fetchInteractables();
     } catch (err) {
@@ -611,19 +611,19 @@ const ChatRoom = (): JSX.Element => {
                   <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
                 </div>
               ) : interactables.length > 0 ? (
-                interactables.map((item) => (
+                interactables.map((interactable) => (
                   <div
-                    key={item.id}
+                    key={interactable.id}
                     className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer group"
                   >
-                    <div className="font-medium">{item.name}</div>
-                    <div className="text-xs text-gray-400 mt-1">{item.description}</div>
+                    <div className="font-medium">{interactable.name}</div>
+                    <div className="text-xs text-gray-400 mt-1">{interactable.description}</div>
                     <div className="mt-2 space-x-2 hidden group-hover:block">
-                      {item.interactions.map((action, index) => (
+                      {interactable.interactions.map((action, index) => (
                         <button
                           key={index}
                           className="text-xs px-2 py-1 bg-primary/20 hover:bg-primary/30 rounded"
-                          onClick={() => handleInteraction(item.id, action)}
+                          onClick={() => handleInteraction(interactable.id, action)}
                         >
                           {action}
                         </button>
