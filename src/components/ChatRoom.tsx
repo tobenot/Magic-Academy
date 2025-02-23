@@ -20,14 +20,12 @@ import classNames from "classnames";
 import CGModal from "./CGModal";
 import { MapService } from "../services/MapService";
 import { MovementService } from "../services/MovementService";
+import InventoryPanel from "./InventoryPanel";
+import { interactablesConfig, InteractionEffect, InteractableConfig } from '../config/interactables';
+import { itemsConfig } from '../config/items';
+import type { Item } from '../models/Item';
 
-// 新增：交互物接口定义
-interface Interactable {
-  id: string;
-  name: string;
-  description: string;
-  interactions: string[];
-}
+interface Interactable extends InteractableConfig {}
 
 interface Message {
   type: WSMessageData["type"];
@@ -45,7 +43,6 @@ interface Message {
   targetName?: string;
 }
 
-// 修改：地图房间数据接口，添加 interactables 字段
 interface RoomInfo {
   id: string;
   name: string;
@@ -64,36 +61,29 @@ const ChatRoom = (): JSX.Element => {
   const [username, setUsername] = useState<string>("");
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
 
-  // 新增：地图状态，用于保存从后端接口获取的房间数据
   const [roomMap, setRoomMap] = useState<RoomInfo | null>(null);
-  // 新增：交互物状态
   const [interactables, setInteractables] = useState<Interactable[]>([]);
   const [loadingInteractables, setLoadingInteractables] = useState(false);
 
-  // 使用 useMemo 保持 AuthService 实例稳定
   const authService = useMemo(() => new AuthService(), []);
 
   const [onlineUsers, setOnlineUsers] = useState<WSUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  // 新增状态：控制生成 CG 弹窗可见性和图片 URL
   const [cgModalVisible, setCgModalVisible] = useState<boolean>(false);
   const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
-  // 新增状态：跟踪正在生成CG图片的消息ID列表
   const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>([]);
 
-  // 使用 MapService 来获取地图数据，降低耦合
   const mapService = useMemo(() => new MapService(), []);
-  // 实例化 MovementService
   const movementService = useMemo(() => new MovementService(), []);
 
-  // 处理消息发送
+  const [inventoryVisible, setInventoryVisible] = useState(false);
+
   const sendMessage = useCallback((): void => {
     if (!inputMessage.trim()) return;
     wsService?.sendMessage(inputMessage.trim());
     setInputMessage("");
   }, [inputMessage, wsService]);
 
-  // 修改消息处理函数
   const handleMessage = useCallback((message: WSServerMessage) => {
     switch (message.type) {
       case WSMessageType.CHAT:
@@ -111,7 +101,6 @@ const ChatRoom = (): JSX.Element => {
         break;
 
       case WSMessageType.CHAT_HISTORY: {
-        // 按照新的接口格式解析历史消息
         const historyData = message.data as WSChatHistoryData;
         if (Array.isArray(historyData.messages)) {
           const historyMessages = historyData.messages.map((msg: WSServerMessage) => ({
@@ -120,8 +109,8 @@ const ChatRoom = (): JSX.Element => {
             username:
               msg.data.initiatorName ||
               (msg.data.type === "system" ? "System" : "未知用户"),
-            content: msg.data.message, // 此处message为必填字段
-            timestamp: msg.timestamp, // 使用外层的timestamp值
+            content: msg.data.message,
+            timestamp: msg.timestamp,
             initiatorId: msg.data.initiatorId,
             actionId: msg.data.actionId,
             status: msg.data.status,
@@ -208,9 +197,7 @@ const ChatRoom = (): JSX.Element => {
     }
   }, [sendMessage]);
 
-  // 修改后的生成交互CG图片函数
   const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
-    // 添加当前 messageId 到生成中的状态，防止重复点击
     setGeneratingCGMessages((prev) => {
       if (prev.includes(interactionMessageId)) return prev;
       return [...prev, interactionMessageId];
@@ -233,32 +220,27 @@ const ChatRoom = (): JSX.Element => {
       }
 
       const { imageUrl } = await response.json();
-      // 更新状态，显示弹窗UI并传入获取到的图片 URL
       setCgImageUrl(imageUrl);
       setCgModalVisible(true);
     } catch (error: any) {
       console.error("生成CG图片失败:", error);
       alert("生成CG图片失败: " + error.message);
     } finally {
-      // 移除生成中的状态
       setGeneratingCGMessages((prev) =>
         prev.filter((id) => id !== interactionMessageId)
       );
     }
   }, []);
 
-  // 定义获取在线用户列表的函数
   const fetchNearbyUsers = useCallback(async () => {
     try {
       const users = await authService.getNearbyUsers();
-      // 注意：getNearbyUsers接口返回的对象包含 id, nickname 和 userType，
-      // 这里直接使用返回值，如果需要，可进行后续处理
       const transformed: WSUser[] = (users as Array<{ id: number; nickname: string }>).map(
         (user) => ({
           id: user.id,
           nickname: user.nickname,
-          status: "online", // 默认赋值
-          lastActive: Date.now(), // 默认赋值
+          status: "online",
+          lastActive: Date.now(),
         })
       );
       setOnlineUsers(transformed);
@@ -267,7 +249,6 @@ const ChatRoom = (): JSX.Element => {
     }
   }, [authService]);
 
-  // 用户上线处理函数
   const handleUserOnline = useCallback((event: WSServerMessage) => {
     if (event.type !== WSMessageType.USER_ONLINE) return;
 
@@ -288,7 +269,6 @@ const ChatRoom = (): JSX.Element => {
     });
   }, []);
 
-  // 用户下线处理函数
   const handleUserOffline = useCallback((event: WSServerMessage) => {
     if (event.type !== WSMessageType.USER_OFFLINE) return;
     setOnlineUsers((prev) =>
@@ -296,7 +276,6 @@ const ChatRoom = (): JSX.Element => {
     );
   }, []);
 
-  // 用户列表更新处理函数，转换用户数据
   const handleUserListUpdate = useCallback((event: WSServerMessage) => {
     if (event.type !== WSMessageType.USER_LIST_UPDATE || !event.data.users) return;
     const updatedUsers: WSUser[] = event.data.users.map((user) => ({
@@ -307,18 +286,16 @@ const ChatRoom = (): JSX.Element => {
     setOnlineUsers(updatedUsers);
   }, []);
 
-  // 使用 MapService 来获取地图数据，降低耦合
   const fetchMapData = useCallback(async () => {
     try {
       const room = await mapService.getMap();
-      console.log("地图接口返回数据:", room); // 调试日志
+      console.log("地图接口返回数据:", room);
       setRoomMap(room);
     } catch (error: any) {
       console.error("获取地图信息失败:", error);
     }
   }, [mapService]);
 
-  // 新增：获取交互物列表的函数
   const fetchInteractables = useCallback(async () => {
     try {
       setLoadingInteractables(true);
@@ -344,7 +321,6 @@ const ChatRoom = (): JSX.Element => {
     }
   }, []);
 
-  // WebSocket 连接和事件处理
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -361,24 +337,20 @@ const ChatRoom = (): JSX.Element => {
           const ws = WebSocketService.getInstance();
           setWsService(ws);
 
-          // 清理旧的事件监听
           ws.off("message", handleMessage);
           ws.off("connected", handleConnected);
           ws.off("disconnect", handleDisconnect);
           ws.off("error", handleError);
 
-          // 添加新的事件监听
           ws.on("message", handleMessage);
           ws.on("connected", handleConnected);
           ws.on("disconnect", handleDisconnect);
           ws.on("error", handleError);
 
-          // 添加用户状态事件监听
           ws.on(WSMessageType.USER_ONLINE, handleUserOnline);
           ws.on(WSMessageType.USER_OFFLINE, handleUserOffline);
           ws.on(WSMessageType.USER_LIST_UPDATE, handleUserListUpdate);
 
-          // 添加请求在线用户列表的处理
           ws.on("request_online_users", () => {
             console.log("[WebSocket] 连接成功,获取附近用户列表");
             fetchNearbyUsers();
@@ -418,19 +390,16 @@ const ChatRoom = (): JSX.Element => {
     handleUserListUpdate,
   ]);
 
-  // 新增 useEffect，组件加载时获取地图数据
   useEffect(() => {
     fetchMapData();
   }, [fetchMapData]);
 
-  // 修改：在获取地图数据后同时获取交互物
   useEffect(() => {
     if (roomMap?.id) {
       fetchInteractables();
     }
   }, [roomMap?.id, fetchInteractables]);
 
-  // 更新页面标题
   useEffect(() => {
     document.title = `万象魔法学院 - ${username || "未登录"}`;
     return () => {
@@ -438,28 +407,54 @@ const ChatRoom = (): JSX.Element => {
     };
   }, [username]);
 
-  // 修改获取在线用户列表的函数
   useEffect(() => {
     fetchNearbyUsers();
-    // 每10秒轮询一次，获取当前房间内在线的用户数据
     const interval = setInterval(fetchNearbyUsers, 10000);
 
     return () => clearInterval(interval);
   }, [fetchNearbyUsers]);
 
-  // 新增：处理交互物交互的方法
   const handleInteraction = useCallback(async (interactableId: string, action: string) => {
-    if (!wsService) return;
     try {
-      await wsService.sendInteraction(action, interactableId);
-      // 交互成功后刷新交互物列表
-      fetchInteractables();
-    } catch (err) {
-      console.error("执行交互动作失败:", err);
-    }
-  }, [wsService, fetchInteractables]);
+        const interactable = interactablesConfig[interactableId as keyof typeof interactablesConfig];
+        if (!interactable) {
+            throw new Error('交互物不存在');
+        }
 
-  // 修改消息渲染部分
+        const effect = interactable.interactions[action as keyof typeof interactable.interactions];
+        if (!effect) {
+            throw new Error('交互动作不存在');
+        }
+
+        await wsService?.sendInteraction(action, interactableId);
+
+        if (effect.type === 'item' && effect.items) {
+            const possibleItems = effect.items.map(itemConfig => {
+                const item = itemsConfig[itemConfig.itemId as keyof typeof itemsConfig];
+                return `${item?.name || itemConfig.itemId} (${Math.floor(itemConfig.probability * 100)}% 概率获得${itemConfig.minQuantity}-${itemConfig.maxQuantity}个)`;
+            }).join('、');
+            
+            setMessages(prev => [...prev, {
+                type: 'system',
+                messageId: Date.now().toString(),
+                username: 'System',
+                content: `正在${action} ${interactable.name}，可能获得：${possibleItems}`,
+                timestamp: Date.now()
+            }]);
+        }
+
+    } catch (error: any) {
+        console.error('执行交互失败:', error);
+        setMessages(prev => [...prev, {
+            type: 'system',
+            messageId: Date.now().toString(),
+            username: 'System',
+            content: `交互失败: ${error.message}`,
+            timestamp: Date.now()
+        }]);
+    }
+  }, [wsService]);
+
   const renderMessage = (msg: Message) => {
     const messageClass = {
       chat: "bg-white/5",
@@ -473,7 +468,6 @@ const ChatRoom = (): JSX.Element => {
       heartbeat: "bg-blue-500",
     }[msg.type];
 
-    // 使用初始化时记录的剩余持续时间
     const remainingDuration = msg.initialRemaining || 0;
 
     return (
@@ -529,7 +523,6 @@ const ChatRoom = (): JSX.Element => {
     );
   };
 
-  // 新增 handleMove 方法
   const handleMove = useCallback(async (targetRoomId: string) => {
     try {
       const characterIdStr = localStorage.getItem("userId");
@@ -544,7 +537,6 @@ const ChatRoom = (): JSX.Element => {
 
       await movementService.move(characterId, roomMap.id, targetRoomId, "normal");
       alert("角色移动成功");
-      // 如果移动成功，则重新刷新地图数据和附近的用户列表
       fetchMapData();
       fetchNearbyUsers();
     } catch (error: any) {
@@ -554,7 +546,6 @@ const ChatRoom = (): JSX.Element => {
 
   return (
     <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
-      {/* 新增：显示当前地图和附近的链接 */}
       {roomMap && (
         <div className="map-info text-white bg-gray-800 p-3 rounded mb-4">
           <h2 className="text-xl font-bold">{roomMap.name}</h2>
@@ -579,15 +570,13 @@ const ChatRoom = (): JSX.Element => {
         </div>
       )}
 
-      <div className="flex gap-4 h-full">
-        {/* 左侧用户列表和交互物列表 */}
+      <div className="flex gap-4 flex-1 min-h-0">
         <div className="w-48 flex flex-col gap-4">
-          {/* 在线用户列表 */}
-          <div className="flex-1 bg-white/10 rounded-lg p-3">
+          <div className="flex-1 bg-white/10 rounded-lg p-3 min-h-0 flex flex-col">
             <h3 className="text-primary font-bold mb-3 text-sm">
               周围的人 ({onlineUsers.length})
             </h3>
-            <div className="space-y-2 overflow-y-auto max-h-[calc(50vh-100px)]">
+            <div className="overflow-y-auto flex-1">
               {onlineUsers.map((user) => (
                 <div
                   key={user.id}
@@ -600,12 +589,11 @@ const ChatRoom = (): JSX.Element => {
             </div>
           </div>
 
-          {/* 交互物列表 */}
-          <div className="flex-1 bg-white/10 rounded-lg p-3">
+          <div className="flex-1 bg-white/10 rounded-lg p-3 min-h-0 flex flex-col">
             <h3 className="text-primary font-bold mb-3 text-sm">
               可交互物品 ({interactables.length})
             </h3>
-            <div className="space-y-2 overflow-y-auto max-h-[calc(50vh-100px)]">
+            <div className="overflow-y-auto flex-1">
               {loadingInteractables ? (
                 <div className="flex justify-center py-4">
                   <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
@@ -619,13 +607,29 @@ const ChatRoom = (): JSX.Element => {
                     <div className="font-medium">{interactable.name}</div>
                     <div className="text-xs text-gray-400 mt-1">{interactable.description}</div>
                     <div className="mt-2 space-x-2 hidden group-hover:block">
-                      {interactable.interactions.map((action, index) => (
+                      {Object.entries(interactable.interactions).map(([action, effect]) => (
                         <button
-                          key={index}
-                          className="text-xs px-2 py-1 bg-primary/20 hover:bg-primary/30 rounded"
+                          key={action}
+                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
+                            effect.type === 'item' 
+                              ? 'bg-blue-500/20 hover:bg-blue-500/30' 
+                              : effect.type === 'status'
+                              ? 'bg-green-500/20 hover:bg-green-500/30'
+                              : 'bg-purple-500/20 hover:bg-purple-500/30'
+                          }`}
                           onClick={() => handleInteraction(interactable.id, action)}
                         >
-                          {action}
+                          <span>{
+                            effect.type === 'item' ? '📦 ' :
+                            effect.type === 'status' ? '✨ ' :
+                            '💫 '
+                          }</span>
+                          <span>{action}</span>
+                          {effect.duration && (
+                            <span className="text-xs opacity-75">
+                              ({effect.duration / 1000}s)
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>
@@ -638,21 +642,28 @@ const ChatRoom = (): JSX.Element => {
               )}
             </div>
           </div>
+
+          <button
+            onClick={() => setInventoryVisible(true)}
+            className="w-full p-3 bg-white/10 hover:bg-white/20 rounded-lg text-white transition flex items-center justify-center gap-2 shrink-0"
+          >
+            <span role="img" aria-label="背包">🎒</span>
+            物品栏
+          </button>
         </div>
 
-        {/* 聊天区域 */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {username && (
             <div className="text-white text-sm mb-2">当前用户：{username}</div>
           )}
 
-          <div className="chat-messages flex-1 overflow-y-auto mb-5 p-3 bg-white/10 rounded-lg">
+          <div className="chat-messages flex-1 overflow-y-auto mb-5 p-3 bg-white/10 rounded-lg min-h-0">
             {messages.map((msg: Message, index: number) => (
               <div key={index}>{renderMessage(msg)}</div>
             ))}
           </div>
 
-          <div className="chat-input flex gap-2">
+          <div className="chat-input flex gap-2 shrink-0">
             <input
               type="text"
               value={inputMessage}
@@ -679,6 +690,10 @@ const ChatRoom = (): JSX.Element => {
 
       {cgModalVisible && cgImageUrl && (
         <CGModal imageUrl={cgImageUrl} onClose={() => setCgModalVisible(false)} />
+      )}
+
+      {inventoryVisible && (
+        <InventoryPanel onClose={() => setInventoryVisible(false)} />
       )}
     </div>
   );
