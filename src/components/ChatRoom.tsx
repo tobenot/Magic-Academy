@@ -21,6 +21,14 @@ import CGModal from "./CGModal";
 import { MapService } from "../services/MapService";
 import { MovementService } from "../services/MovementService";
 
+// 新增：交互物接口定义
+interface Interactable {
+  id: string;
+  name: string;
+  description: string;
+  interactions: string[];
+}
+
 interface Message {
   type: WSMessageData["type"];
   messageId: string;
@@ -37,7 +45,7 @@ interface Message {
   targetName?: string;
 }
 
-// 新增：地图房间数据接口
+// 修改：地图房间数据接口，添加 interactables 字段
 interface RoomInfo {
   id: string;
   name: string;
@@ -46,6 +54,7 @@ interface RoomInfo {
     targetRoomId: string;
     direction: string;
   }[];
+  interactables?: Interactable[];
 }
 
 const ChatRoom = (): JSX.Element => {
@@ -57,6 +66,9 @@ const ChatRoom = (): JSX.Element => {
 
   // 新增：地图状态，用于保存从后端接口获取的房间数据
   const [roomMap, setRoomMap] = useState<RoomInfo | null>(null);
+  // 新增：交互物状态
+  const [interactables, setInteractables] = useState<Interactable[]>([]);
+  const [loadingInteractables, setLoadingInteractables] = useState(false);
 
   // 使用 useMemo 保持 AuthService 实例稳定
   const authService = useMemo(() => new AuthService(), []);
@@ -306,6 +318,32 @@ const ChatRoom = (): JSX.Element => {
     }
   }, [mapService]);
 
+  // 新增：获取交互物列表的函数
+  const fetchInteractables = useCallback(async () => {
+    try {
+      setLoadingInteractables(true);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/map/interactables`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("获取交互物列表失败");
+      }
+
+      const result = await response.json();
+      if (result.interactables) {
+        setInteractables(result.interactables);
+      }
+    } catch (error) {
+      console.error("获取交互物失败:", error);
+      setInteractables([]);
+    } finally {
+      setLoadingInteractables(false);
+    }
+  }, []);
+
   // WebSocket 连接和事件处理
   useEffect(() => {
     const checkAuth = async () => {
@@ -384,6 +422,13 @@ const ChatRoom = (): JSX.Element => {
   useEffect(() => {
     fetchMapData();
   }, [fetchMapData]);
+
+  // 修改：在获取地图数据后同时获取交互物
+  useEffect(() => {
+    if (roomMap?.id) {
+      fetchInteractables();
+    }
+  }, [roomMap?.id, fetchInteractables]);
 
   // 更新页面标题
   useEffect(() => {
@@ -523,21 +568,66 @@ const ChatRoom = (): JSX.Element => {
       )}
 
       <div className="flex gap-4 h-full">
-        {/* 在线用户列表 - 移除 hidden md:block,让移动端也显示 */}
-        <div className="w-48 bg-white/10 rounded-lg p-3">
-          <h3 className="text-primary font-bold mb-3 text-sm">
-            周围的人 ({onlineUsers.length})
-          </h3>
-          <div className="space-y-2 overflow-y-auto max-h-[calc(100vh-200px)]">
-            {onlineUsers.map((user) => (
-              <div
-                key={user.id}
-                className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer"
-                onClick={() => setSelectedUserId(user.id)}
-              >
-                {user.nickname}
-              </div>
-            ))}
+        {/* 左侧用户列表和交互物列表 */}
+        <div className="w-48 flex flex-col gap-4">
+          {/* 在线用户列表 */}
+          <div className="flex-1 bg-white/10 rounded-lg p-3">
+            <h3 className="text-primary font-bold mb-3 text-sm">
+              周围的人 ({onlineUsers.length})
+            </h3>
+            <div className="space-y-2 overflow-y-auto max-h-[calc(50vh-100px)]">
+              {onlineUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer"
+                  onClick={() => setSelectedUserId(user.id)}
+                >
+                  {user.nickname}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 交互物列表 */}
+          <div className="flex-1 bg-white/10 rounded-lg p-3">
+            <h3 className="text-primary font-bold mb-3 text-sm">
+              可交互物品 ({interactables.length})
+            </h3>
+            <div className="space-y-2 overflow-y-auto max-h-[calc(50vh-100px)]">
+              {loadingInteractables ? (
+                <div className="flex justify-center py-4">
+                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : interactables.length > 0 ? (
+                interactables.map((item) => (
+                  <div
+                    key={item.id}
+                    className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer group"
+                  >
+                    <div className="font-medium">{item.name}</div>
+                    <div className="text-xs text-gray-400 mt-1">{item.description}</div>
+                    <div className="mt-2 space-x-2 hidden group-hover:block">
+                      {item.interactions.map((action, index) => (
+                        <button
+                          key={index}
+                          className="text-xs px-2 py-1 bg-primary/20 hover:bg-primary/30 rounded"
+                          onClick={() => {
+                            // TODO: 处理交互动作
+                            console.log(`执行动作: ${action} on ${item.id}`);
+                          }}
+                        >
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-400 text-sm text-center py-4">
+                  当前房间没有可交互物品
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
