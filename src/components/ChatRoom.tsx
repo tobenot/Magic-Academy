@@ -447,6 +447,18 @@ const ChatRoom = (): JSX.Element => {
     return () => clearInterval(interval);
   }, [fetchNearbyUsers]);
 
+  // 新增：处理交互物交互的方法
+  const handleInteraction = useCallback(async (itemId: string, action: string) => {
+    if (!wsService) return;
+    try {
+      await wsService.sendInteraction(action, itemId);
+      // 交互成功后刷新交互物列表
+      fetchInteractables();
+    } catch (err) {
+      console.error("执行交互动作失败:", err);
+    }
+  }, [wsService, fetchInteractables]);
+
   // 修改消息渲染部分
   const renderMessage = (msg: Message) => {
     const messageClass = {
@@ -611,10 +623,7 @@ const ChatRoom = (): JSX.Element => {
                         <button
                           key={index}
                           className="text-xs px-2 py-1 bg-primary/20 hover:bg-primary/30 rounded"
-                          onClick={() => {
-                            // TODO: 处理交互动作
-                            console.log(`执行动作: ${action} on ${item.id}`);
-                          }}
+                          onClick={() => handleInteraction(item.id, action)}
                         >
                           {action}
                         </button>

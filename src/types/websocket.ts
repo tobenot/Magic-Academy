@@ -79,7 +79,7 @@ export interface WSClientMessage {
         type: 'chat' | 'system' | 'interaction' | 'roomUpdate' | 'heartbeat';
         content?: string;
         actionId?: string;
-        targetId?: number;
+        targetId?: number | string;
     };
 }
 
