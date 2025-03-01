@@ -21,9 +21,8 @@ import CGModal from "./CGModal";
 import { MapService } from "../services/MapService";
 import { MovementService } from "../services/MovementService";
 import InventoryPanel from "./InventoryPanel";
-import { interactablesConfig, InteractionEffect, InteractableConfig } from '../config/interactables';
+import { interactablesConfig, InteractableConfig } from '../config/interactables';
 import { itemsConfig } from '../config/items';
-import type { InventoryItemDto } from '../types/inventory';
 
 interface Interactable extends InteractableConfig {}
 
