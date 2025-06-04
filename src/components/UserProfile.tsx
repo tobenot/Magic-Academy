@@ -4,7 +4,6 @@ import { UserProfile } from "../types/profile";
 import { formatDistance } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import AssetLoader, { AssetType, ImageType } from "../utils/AssetLoader";
-import InteractionMenu from "./InteractionMenu";
 
 interface UserProfileCardProps {
   userId: number;
@@ -49,7 +48,6 @@ const UserProfileCard = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [showInteractionMenu, setShowInteractionMenu] = useState(false);
   const [showAvatarEditor, setShowAvatarEditor] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarLoading, setAvatarLoading] = useState(true);
@@ -323,25 +321,8 @@ const UserProfileCard = ({
               修改外观
             </button>
           )}
-          <button
-            onClick={() => setShowInteractionMenu(true)}
-            className="px-[3vh] py-[1.5vh] bg-primary hover:bg-secondary text-black rounded-full transition text-[1.8vh]"
-          >
-            互动
-          </button>
         </div>
       </div>
-
-      {showInteractionMenu && (
-        <InteractionMenu
-          userId={userId}
-          onClose={() => setShowInteractionMenu(false)}
-          onActionSuccess={() => {
-            setShowInteractionMenu(false);
-            onClose();
-          }}
-        />
-      )}
 
       {showAvatarEditor && (
         <AvatarEditorContainer onClose={() => setShowAvatarEditor(false)} />
