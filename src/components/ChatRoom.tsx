@@ -18,13 +18,6 @@ import {
 import UserProfileCard from "./UserProfile";
 import classNames from "classnames";
 import CGModal from "./CGModal";
-import { MapService } from "../services/MapService";
-import { MovementService } from "../services/MovementService";
-import InventoryPanel from "./InventoryPanel";
-import { interactablesConfig, InteractableConfig } from '../config/interactables';
-import { itemsConfig } from '../config/items';
-
-interface Interactable extends InteractableConfig {}
 
 interface Message {
   type: WSMessageData["type"];
@@ -50,7 +43,6 @@ interface RoomInfo {
     targetRoomId: string;
     direction: string;
   }[];
-  interactables?: Interactable[];
 }
 
 const ChatRoom = (): JSX.Element => {
@@ -60,22 +52,14 @@ const ChatRoom = (): JSX.Element => {
   const [username, setUsername] = useState<string>("");
   const [wsService, setWsService] = useState<WebSocketService | null>(null);
 
-  const [roomMap, setRoomMap] = useState<RoomInfo | null>(null);
-  const [interactables, setInteractables] = useState<Interactable[]>([]);
-  const [loadingInteractables, setLoadingInteractables] = useState(false);
-
   const authService = useMemo(() => new AuthService(), []);
 
   const [onlineUsers, setOnlineUsers] = useState<WSUser[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
   const [cgModalVisible, setCgModalVisible] = useState<boolean>(false);
   const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
   const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>([]);
-
-  const mapService = useMemo(() => new MapService(), []);
-  const movementService = useMemo(() => new MovementService(), []);
-
-  const [inventoryVisible, setInventoryVisible] = useState(false);
 
   const sendMessage = useCallback((): void => {
     if (!inputMessage.trim()) return;
@@ -196,41 +180,6 @@ const ChatRoom = (): JSX.Element => {
     }
   }, [sendMessage]);
 
-  const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
-    setGeneratingCGMessages((prev) => {
-      if (prev.includes(interactionMessageId)) return prev;
-      return [...prev, interactionMessageId];
-    });
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/interaction/generate-cg`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ interactionMessageId }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const { imageUrl } = await response.json();
-      setCgImageUrl(imageUrl);
-      setCgModalVisible(true);
-    } catch (error: any) {
-      console.error("生成CG图片失败:", error);
-      alert("生成CG图片失败: " + error.message);
-    } finally {
-      setGeneratingCGMessages((prev) =>
-        prev.filter((id) => id !== interactionMessageId)
-      );
-    }
-  }, []);
-
   const fetchNearbyUsers = useCallback(async () => {
     try {
       const users = await authService.getNearbyUsers();
@@ -285,38 +234,38 @@ const ChatRoom = (): JSX.Element => {
     setOnlineUsers(updatedUsers);
   }, []);
 
-  const fetchMapData = useCallback(async () => {
+  const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
+    setGeneratingCGMessages((prev) => {
+      if (prev.includes(interactionMessageId)) return prev;
+      return [...prev, interactionMessageId];
+    });
     try {
-      const room = await mapService.getMap();
-      console.log("地图接口返回数据:", room);
-      setRoomMap(room);
-    } catch (error: any) {
-      console.error("获取地图信息失败:", error);
-    }
-  }, [mapService]);
-
-  const fetchInteractables = useCallback(async () => {
-    try {
-      setLoadingInteractables(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/map/interactables`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/interaction/generate-cg`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ interactionMessageId }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("获取交互物列表失败");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.json();
-      if (result.interactables) {
-        setInteractables(result.interactables);
-      }
-    } catch (error) {
-      console.error("获取交互物失败:", error);
-      setInteractables([]);
+      const { imageUrl } = await response.json();
+      setCgImageUrl(imageUrl);
+      setCgModalVisible(true);
+    } catch (error: any) {
+      console.error("生成CG图片失败:", error);
+      alert("生成CG图片失败: " + error.message);
     } finally {
-      setLoadingInteractables(false);
+      setGeneratingCGMessages((prev) =>
+        prev.filter((id) => id !== interactionMessageId)
+      );
     }
   }, []);
 
@@ -379,6 +328,7 @@ const ChatRoom = (): JSX.Element => {
 
     checkAuth();
   }, [
+    authService,
     handleMessage,
     handleConnected,
     handleDisconnect,
@@ -390,16 +340,6 @@ const ChatRoom = (): JSX.Element => {
   ]);
 
   useEffect(() => {
-    fetchMapData();
-  }, [fetchMapData]);
-
-  useEffect(() => {
-    if (roomMap?.id) {
-      fetchInteractables();
-    }
-  }, [roomMap?.id, fetchInteractables]);
-
-  useEffect(() => {
     document.title = `万象魔法学院 - ${username || "未登录"}`;
     return () => {
       document.title = "万象魔法学院";
@@ -409,50 +349,8 @@ const ChatRoom = (): JSX.Element => {
   useEffect(() => {
     fetchNearbyUsers();
     const interval = setInterval(fetchNearbyUsers, 10000);
-
     return () => clearInterval(interval);
   }, [fetchNearbyUsers]);
-
-  const handleInteraction = useCallback(async (interactableId: string, action: string) => {
-    try {
-        const interactable = interactablesConfig[interactableId as keyof typeof interactablesConfig];
-        if (!interactable) {
-            throw new Error('交互物不存在');
-        }
-
-        const effect = interactable.interactions[action as keyof typeof interactable.interactions];
-        if (!effect) {
-            throw new Error('交互动作不存在');
-        }
-
-        await wsService?.sendInteraction(action, interactableId);
-
-        if (effect.type === 'item' && effect.items) {
-            const possibleItems = effect.items.map(itemConfig => {
-                const item = itemsConfig[itemConfig.itemId as keyof typeof itemsConfig];
-                return `${item?.name || itemConfig.itemId} (${Math.floor(itemConfig.probability * 100)}% 概率获得${itemConfig.minQuantity}-${itemConfig.maxQuantity}个)`;
-            }).join('、');
-            
-            setMessages(prev => [...prev, {
-                type: 'system',
-                messageId: Date.now().toString(),
-                username: 'System',
-                content: `正在${action} ${interactable.name}，可能获得：${possibleItems}`,
-                timestamp: Date.now()
-            }]);
-        }
-
-    } catch (error: any) {
-        console.error('执行交互失败:', error);
-        setMessages(prev => [...prev, {
-            type: 'system',
-            messageId: Date.now().toString(),
-            username: 'System',
-            content: `交互失败: ${error.message}`,
-            timestamp: Date.now()
-        }]);
-    }
-  }, [wsService]);
 
   const renderMessage = (msg: Message) => {
     const messageClass = {
@@ -470,7 +368,7 @@ const ChatRoom = (): JSX.Element => {
     const remainingDuration = msg.initialRemaining || 0;
 
     return (
-      <div className={`message m-2 p-2 rounded ${messageClass}`}>
+      <div className={classNames("message m-2 p-2 rounded", messageClass)}>
         <span
           className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
           onClick={() => msg.initiatorId && setSelectedUserId(msg.initiatorId)}
@@ -495,19 +393,19 @@ const ChatRoom = (): JSX.Element => {
             </div>
           )}
 
-        {msg.type === "interaction" && msg.messageId && (
+        {msg.type === WSMessageType.INTERACTION && msg.messageId && (
           <div className="mt-2">
             {generatingCGMessages.includes(msg.messageId) ? (
               <button
                 disabled
-                className="px-3 py-1 bg-blue-500 text-white rounded"
+                className="px-3 py-1 bg-blue-500 text-white rounded opacity-50 cursor-not-allowed"
               >
                 生成中...
               </button>
             ) : (
               <button
-                onClick={() => handleGenerateCG(msg.messageId)}
-                className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded"
+                onClick={() => handleGenerateCG(msg.messageId!)}
+                className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
               >
                 生成CG图片
               </button>
@@ -522,47 +420,8 @@ const ChatRoom = (): JSX.Element => {
     );
   };
 
-  const handleMove = useCallback(async (targetRoomId: string) => {
-    try {
-      const characterIdStr = localStorage.getItem("userId");
-      if (!characterIdStr) {
-        throw new Error("未登录 - 无有效的 userId");
-      }
-      const characterId = Number(characterIdStr);
-      if (!roomMap || !roomMap.id) {
-        throw new Error("当前房间信息不可用");
-      }
-      if (!window.confirm(`确定要移动到 ${targetRoomId} 吗？`)) return;
-
-      await movementService.move(characterId, roomMap.id, targetRoomId, "normal");
-      alert("角色移动成功");
-      fetchMapData();
-      fetchNearbyUsers();
-    } catch (error: any) {
-      alert(`角色移动失败: ${error.message}`);
-    }
-  }, [roomMap, fetchMapData, movementService, fetchNearbyUsers]);
-
   return (
     <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
-      {roomMap && (
-        <div className="map-info text-white bg-gray-800 p-3 rounded mb-4">
-          <h2 className="text-xl font-bold">{roomMap.name}</h2>
-          <p className="mt-1">{roomMap.description}</p>
-          <div className="flex gap-2 mt-2">
-            {roomMap.connections.map((conn, index) => (
-              <button 
-                key={index}
-                className="px-2 py-1 bg-blue-500 hover:bg-blue-600 rounded"
-                onClick={() => handleMove(conn.targetRoomId)}
-              >
-                {conn.direction}: {conn.targetRoomId}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {!connected && (
         <div className="text-yellow-500 text-center mb-2">
           正在连接聊天服务器...
@@ -587,68 +446,6 @@ const ChatRoom = (): JSX.Element => {
               ))}
             </div>
           </div>
-
-          <div className="flex-1 bg-white/10 rounded-lg p-3 min-h-0 flex flex-col">
-            <h3 className="text-primary font-bold mb-3 text-sm">
-              可交互物品 ({interactables.length})
-            </h3>
-            <div className="overflow-y-auto flex-1">
-              {loadingInteractables ? (
-                <div className="flex justify-center py-4">
-                  <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
-              ) : interactables.length > 0 ? (
-                interactables.map((interactable) => (
-                  <div
-                    key={interactable.id}
-                    className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer group"
-                  >
-                    <div className="font-medium">{interactable.name}</div>
-                    <div className="text-xs text-gray-400 mt-1">{interactable.description}</div>
-                    <div className="mt-2 space-x-2 hidden group-hover:block">
-                      {Object.entries(interactable.interactions).map(([action, effect]) => (
-                        <button
-                          key={action}
-                          className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${
-                            effect.type === 'item' 
-                              ? 'bg-blue-500/20 hover:bg-blue-500/30' 
-                              : effect.type === 'status'
-                              ? 'bg-green-500/20 hover:bg-green-500/30'
-                              : 'bg-purple-500/20 hover:bg-purple-500/30'
-                          }`}
-                          onClick={() => handleInteraction(interactable.id, action)}
-                        >
-                          <span>{
-                            effect.type === 'item' ? '📦 ' :
-                            effect.type === 'status' ? '✨ ' :
-                            '💫 '
-                          }</span>
-                          <span>{action}</span>
-                          {effect.duration && (
-                            <span className="text-xs opacity-75">
-                              ({effect.duration / 1000}s)
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-gray-400 text-sm text-center py-4">
-                  当前房间没有可交互物品
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={() => setInventoryVisible(true)}
-            className="w-full p-3 bg-white/10 hover:bg-white/20 rounded-lg text-white transition flex items-center justify-center gap-2 shrink-0"
-          >
-            <span role="img" aria-label="背包">🎒</span>
-            物品栏
-          </button>
         </div>
 
         <div className="flex-1 flex flex-col min-h-0">
@@ -689,10 +486,6 @@ const ChatRoom = (): JSX.Element => {
 
       {cgModalVisible && cgImageUrl && (
         <CGModal imageUrl={cgImageUrl} onClose={() => setCgModalVisible(false)} />
-      )}
-
-      {inventoryVisible && (
-        <InventoryPanel onClose={() => setInventoryVisible(false)} />
       )}
     </div>
   );
