@@ -19,6 +19,14 @@ import UserProfileCard from "./UserProfile";
 import classNames from "classnames";
 import CGModal from "./CGModal";
 
+// New interface for Manager Information
+interface ManagerInfo {
+  managerId: string;
+  type: string;
+  description: string;
+  dynamicDescription: string;
+}
+
 interface Message {
   type: WSMessageData["type"];
   messageId: string;
@@ -33,17 +41,10 @@ interface Message {
   initiatorId?: number;
   targetId?: number;
   targetName?: string;
+  managerId?: string;
+  targetUserId?: string;
 }
 
-interface RoomInfo {
-  id: string;
-  name: string;
-  description: string;
-  connections: {
-    targetRoomId: string;
-    direction: string;
-  }[];
-}
 
 const ChatRoom = (): JSX.Element => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -54,31 +55,116 @@ const ChatRoom = (): JSX.Element => {
 
   const authService = useMemo(() => new AuthService(), []);
 
-  const [onlineUsers, setOnlineUsers] = useState<WSUser[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-
   const [cgModalVisible, setCgModalVisible] = useState<boolean>(false);
   const [cgImageUrl, setCgImageUrl] = useState<string | null>(null);
   const [generatingCGMessages, setGeneratingCGMessages] = useState<string[]>([]);
 
-  const sendMessage = useCallback((): void => {
-    if (!inputMessage.trim()) return;
-    wsService?.sendMessage(inputMessage.trim());
-    setInputMessage("");
+  const [currentManagerInfo, setCurrentManagerInfo] = useState<ManagerInfo | null>(null);
+  const [isFetchingManagerInfo, setIsFetchingManagerInfo] = useState<boolean>(false);
+  const [isSubmittingAction, setIsSubmittingAction] = useState<boolean>(false);
+
+  const fetchCurrentManagerInfo = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("fetchCurrentManagerInfo: 用户未认证，无法获取管理器信息。");
+      return;
+    }
+    setIsFetchingManagerInfo(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/game/player/current-manager`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data: ManagerInfo = await response.json();
+        setCurrentManagerInfo(data);
+      } else {
+        let errorData: any = { message: "获取管理器信息时HTTP请求失败。" };
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          console.warn("fetchCurrentManagerInfo: response.json() failed after non-ok HTTP status.");
+        }
+        console.error(
+          `fetchCurrentManagerInfo: 获取管理器信息失败。状态码: ${response.status} (${response.statusText || 'N/A'}). `,
+          "错误详情:", errorData
+        );
+        setCurrentManagerInfo(null);
+      }
+    } catch (error: any) {
+      console.error(
+        "fetchCurrentManagerInfo: 执行获取管理器信息请求时发生意外错误。",
+        "错误信息:", error.message || "未知错误",
+        "错误堆栈:", error.stack || "N/A",
+        "完整错误对象:", error
+      );
+      setCurrentManagerInfo(null);
+    } finally {
+      setIsFetchingManagerInfo(false);
+    }
+  }, []);
+
+  const submitPlayerAction = useCallback(async (): Promise<void> => {
+    if (!wsService || !inputMessage.trim()) {
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("用户未认证，无法提交行动。");
+      return;
+    }
+
+    setIsSubmittingAction(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/game/player/action`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ actionText: inputMessage.trim() }),
+        }
+      );
+
+      if (response.status === 202) {
+        const responseData = await response.json();
+        console.log("行动已提交:", responseData);
+        setInputMessage("");
+      } else {
+        const errorData = await response.json().catch(() => ({ message: "提交行动失败，请稍后再试。" }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error("提交行动失败:", error);
+      alert(`提交行动失败: ${error.message}`);
+    } finally {
+      setIsSubmittingAction(false);
+    }
   }, [inputMessage, wsService]);
 
   const handleMessage = useCallback((message: WSServerMessage) => {
+    const messageData = message.data as WSMessageData & { managerId?: string; targetUserId?: string };
+
     switch (message.type) {
       case WSMessageType.CHAT:
         setMessages((prev) => [
           ...prev,
           {
-            type: message.data.type,
+            type: messageData.type,
             messageId: message.messageId,
-            username: message.data.initiatorName || "未知用户",
-            content: message.data.message,
+            username: messageData.initiatorName || "未知用户",
+            content: messageData.message,
             timestamp: message.timestamp,
-            initiatorId: message.data.initiatorId,
+            initiatorId: messageData.initiatorId,
+            managerId: messageData.managerId,
+            targetUserId: messageData.targetUserId,
           },
         ]);
         break;
@@ -86,70 +172,78 @@ const ChatRoom = (): JSX.Element => {
       case WSMessageType.CHAT_HISTORY: {
         const historyData = message.data as WSChatHistoryData;
         if (Array.isArray(historyData.messages)) {
-          const historyMessages = historyData.messages.map((msg: WSServerMessage) => ({
-            type: msg.data.type,
-            messageId: msg.messageId,
-            username:
-              msg.data.initiatorName ||
-              (msg.data.type === "system" ? "System" : "未知用户"),
-            content: msg.data.message,
-            timestamp: msg.timestamp,
-            initiatorId: msg.data.initiatorId,
-            actionId: msg.data.actionId,
-            status: msg.data.status,
-            duration:
-              msg.data.duration && msg.data.duration > 0
-                ? msg.data.duration
-                : undefined,
-            targetId: msg.data.targetId,
-            targetName: msg.data.targetName,
-            startTime: msg.data.startTime,
-            initialRemaining:
-              msg.data.duration && msg.data.startTime
-                ? Math.max(msg.data.duration - (Date.now() - msg.data.startTime), 0)
-                : undefined,
-          }));
+          const historyMessages = historyData.messages.map((msgEntry: WSServerMessage) => {
+            const entryData = msgEntry.data as WSMessageData & { managerId?: string; targetUserId?: string };
+            return {
+              type: entryData.type,
+              messageId: msgEntry.messageId,
+              username:
+                entryData.initiatorName ||
+                (entryData.type === "system" ? "System" : "未知用户"),
+              content: entryData.message,
+              timestamp: msgEntry.timestamp,
+              initiatorId: entryData.initiatorId,
+              actionId: entryData.actionId,
+              status: entryData.status,
+              duration:
+                entryData.duration && entryData.duration > 0
+                  ? entryData.duration
+                  : undefined,
+              targetId: entryData.targetId,
+              targetName: entryData.targetName,
+              startTime: entryData.startTime,
+              initialRemaining:
+                entryData.duration && entryData.startTime
+                  ? Math.max(entryData.duration - (Date.now() - entryData.startTime), 0)
+                  : undefined,
+              managerId: entryData.managerId,
+              targetUserId: entryData.targetUserId,
+            };
+          });
           setMessages((prev) => [...historyMessages, ...prev]);
         }
         break;
       }
 
-      case WSMessageType.INTERACTION:
+      case WSMessageType.INTERACTION: 
+        const interactionData = message.data as WSMessageData & { managerId?: string; targetUserId?: string };
         setMessages((prev) => [
           ...prev,
           {
-            type: message.data.type,
+            type: interactionData.type,
             messageId: message.messageId,
-            username: message.data.initiatorName || "未知用户",
-            content: message.data.message,
+            username: interactionData.initiatorName || "未知用户",
+            content: interactionData.message,
             timestamp: message.timestamp,
-            actionId: message.data.actionId,
-            status: message.data.status,
-            duration:
-              message.data.duration && message.data.duration > 0
-                ? message.data.duration
-                : undefined,
-            startTime: message.data.startTime,
-            initialRemaining:
-              message.data.duration && message.data.startTime
-                ? Math.max(message.data.duration - (Date.now() - message.data.startTime), 0)
-                : undefined,
-            initiatorId: message.data.initiatorId,
-            targetId: message.data.targetId,
-            targetName: message.data.targetName,
+            actionId: interactionData.actionId,
+            status: interactionData.status,
+            duration: interactionData.duration,
+            startTime: interactionData.startTime,
+            initialRemaining: interactionData.duration && interactionData.startTime 
+                                ? Math.max(interactionData.duration - (Date.now() - interactionData.startTime), 0)
+                                : undefined,
+            initiatorId: interactionData.initiatorId,
+            targetId: interactionData.targetId,
+            targetName: interactionData.targetName,
+            managerId: interactionData.managerId,
+            targetUserId: interactionData.targetUserId,
           },
         ]);
         break;
 
       case WSMessageType.SYSTEM:
+        const systemData = message.data as WSMessageData & { managerId?: string; targetUserId?: string };
         setMessages((prev) => [
           ...prev,
           {
             type: "system",
             messageId: message.messageId,
             username: "System",
-            content: message.data.message,
+            content: systemData.message,
             timestamp: message.timestamp,
+            initiatorId: systemData.initiatorId,
+            managerId: systemData.managerId,
+            targetUserId: systemData.targetUserId,
           },
         ]);
         break;
@@ -159,7 +253,8 @@ const ChatRoom = (): JSX.Element => {
   const handleConnected = useCallback(() => {
     console.log("WebSocket 已连接");
     setConnected(true);
-  }, []);
+    fetchCurrentManagerInfo();
+  }, [fetchCurrentManagerInfo]);
 
   const handleDisconnect = useCallback(() => {
     console.log("WebSocket 已断开");
@@ -176,63 +271,9 @@ const ChatRoom = (): JSX.Element => {
 
   const handleKeyPress = useCallback((e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === "Enter") {
-      sendMessage();
+      submitPlayerAction();
     }
-  }, [sendMessage]);
-
-  const fetchNearbyUsers = useCallback(async () => {
-    try {
-      const users = await authService.getNearbyUsers();
-      const transformed: WSUser[] = (users as Array<{ id: number; nickname: string }>).map(
-        (user) => ({
-          id: user.id,
-          nickname: user.nickname,
-          status: "online",
-          lastActive: Date.now(),
-        })
-      );
-      setOnlineUsers(transformed);
-    } catch (error) {
-      console.error("获取附近在线用户列表失败:", error);
-    }
-  }, [authService]);
-
-  const handleUserOnline = useCallback((event: WSServerMessage) => {
-    if (event.type !== WSMessageType.USER_ONLINE) return;
-
-    setOnlineUsers((prev) => {
-      const exists = prev.some((user) => user.id === event.data.initiatorId);
-      if (!exists && event.data.initiatorId && event.data.initiatorName) {
-        return [
-          ...prev,
-          {
-            id: event.data.initiatorId,
-            nickname: event.data.initiatorName,
-            status: "online",
-            lastActive: event.timestamp,
-          },
-        ];
-      }
-      return prev;
-    });
-  }, []);
-
-  const handleUserOffline = useCallback((event: WSServerMessage) => {
-    if (event.type !== WSMessageType.USER_OFFLINE) return;
-    setOnlineUsers((prev) =>
-      prev.filter((user) => user.id !== event.data.initiatorId)
-    );
-  }, []);
-
-  const handleUserListUpdate = useCallback((event: WSServerMessage) => {
-    if (event.type !== WSMessageType.USER_LIST_UPDATE || !event.data.users) return;
-    const updatedUsers: WSUser[] = event.data.users.map((user) => ({
-      ...user,
-      status: user.status || "online",
-      lastActive: user.lastActive || event.timestamp,
-    }));
-    setOnlineUsers(updatedUsers);
-  }, []);
+  }, [submitPlayerAction]);
 
   const handleGenerateCG = useCallback(async (interactionMessageId: string) => {
     setGeneratingCGMessages((prev) => {
@@ -273,36 +314,15 @@ const ChatRoom = (): JSX.Element => {
     const checkAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
-        if (user && typeof user === "object" && "nickname" in user) {
-          console.log("Current user:", user);
-
-          if (typeof user.nickname !== "string") {
-            console.error("Invalid nickname type:", typeof user.nickname);
-            return;
-          }
-
+        if (user && typeof user === "object" && "nickname" in user && typeof user.nickname === 'string') {
           setUsername(user.nickname);
           const ws = WebSocketService.getInstance();
           setWsService(ws);
-
-          ws.off("message", handleMessage);
-          ws.off("connected", handleConnected);
-          ws.off("disconnect", handleDisconnect);
-          ws.off("error", handleError);
 
           ws.on("message", handleMessage);
           ws.on("connected", handleConnected);
           ws.on("disconnect", handleDisconnect);
           ws.on("error", handleError);
-
-          ws.on(WSMessageType.USER_ONLINE, handleUserOnline);
-          ws.on(WSMessageType.USER_OFFLINE, handleUserOffline);
-          ws.on(WSMessageType.USER_LIST_UPDATE, handleUserListUpdate);
-
-          ws.on("request_online_users", () => {
-            console.log("[WebSocket] 连接成功,获取附近用户列表");
-            fetchNearbyUsers();
-          });
 
           ws.connect();
 
@@ -311,13 +331,9 @@ const ChatRoom = (): JSX.Element => {
             ws.off("connected", handleConnected);
             ws.off("disconnect", handleDisconnect);
             ws.off("error", handleError);
-            ws.off(WSMessageType.USER_ONLINE, handleUserOnline);
-            ws.off(WSMessageType.USER_OFFLINE, handleUserOffline);
-            ws.off(WSMessageType.USER_LIST_UPDATE, handleUserListUpdate);
-            ws.off("request_online_users", fetchNearbyUsers);
           };
         } else {
-          console.error("Invalid user data:", user);
+          console.error("Invalid user data or nickname:", user);
           authService.logout();
         }
       } catch (error) {
@@ -325,18 +341,13 @@ const ChatRoom = (): JSX.Element => {
         authService.logout();
       }
     };
-
     checkAuth();
   }, [
     authService,
-    handleMessage,
+    handleMessage, 
     handleConnected,
-    handleDisconnect,
-    handleError,
-    fetchNearbyUsers,
-    handleUserOnline,
-    handleUserOffline,
-    handleUserListUpdate,
+    handleDisconnect, 
+    handleError
   ]);
 
   useEffect(() => {
@@ -346,53 +357,62 @@ const ChatRoom = (): JSX.Element => {
     };
   }, [username]);
 
-  useEffect(() => {
-    fetchNearbyUsers();
-    const interval = setInterval(fetchNearbyUsers, 10000);
-    return () => clearInterval(interval);
-  }, [fetchNearbyUsers]);
-
   const renderMessage = (msg: Message) => {
-    const messageClass = {
-      chat: "bg-white/5",
-      system: "bg-gray-700/50 text-gray-300",
-      interaction: classNames("transition-all", {
+    let messageBaseStyle = "bg-white/5";
+    let userNameStyle = "text-primary";
+    const isManagerMessage = msg.username?.startsWith("Manager") || msg.initiatorId === 0;
+    const currentUserId = localStorage.getItem("userId");
+    const isPrivateMessageToCurrentUser = msg.targetUserId && msg.targetUserId === currentUserId;
+
+    if (msg.type === "system") {
+      messageBaseStyle = "bg-gray-700/50 text-gray-300";
+      userNameStyle = "text-gray-400 font-bold";
+    } else if (isManagerMessage) {
+      messageBaseStyle = "bg-indigo-900/30 text-indigo-200 italic";
+      userNameStyle = "text-indigo-400 font-bold";
+    }
+
+    if (isPrivateMessageToCurrentUser) {
+        messageBaseStyle = classNames(messageBaseStyle, "border-l-2 border-yellow-400 pl-1");
+    }
+
+    const messageClasses = {
+      chat: messageBaseStyle,
+      system: messageBaseStyle,
+      interaction: classNames("transition-all", messageBaseStyle, {
         "bg-primary/10 border border-primary/20": msg.status === "active" && msg.duration,
-        "bg-white/5": msg.status === "instant" || !msg.duration,
-        "bg-white/5 opacity-75": msg.status === "completed",
       }),
-      roomUpdate: "bg-green-500",
-      heartbeat: "bg-blue-500",
-    }[msg.type];
+    };
+
+    const finalStyle = msg.type === WSMessageType.INTERACTION 
+                       ? messageClasses.interaction 
+                       : messageBaseStyle;
 
     const remainingDuration = msg.initialRemaining || 0;
 
     return (
-      <div className={classNames("message m-2 p-2 rounded", messageClass)}>
+      <div className={classNames("message m-2 p-2 rounded", finalStyle)}>
         <span
-          className="username text-primary font-bold mr-2 cursor-pointer hover:underline"
-          onClick={() => msg.initiatorId && setSelectedUserId(msg.initiatorId)}
+          className={classNames("username font-bold mr-2", userNameStyle, {"cursor-pointer hover:underline": !!msg.initiatorId && msg.initiatorId !== 0 && !isManagerMessage})}
+          onClick={() => {
+            if (msg.initiatorId && msg.initiatorId !== 0 && !isManagerMessage) {
+              console.log("Clicked on user:", msg.username, msg.initiatorId);
+            }
+          }}
         >
           {msg.username}
         </span>
-
         <span className="content text-white">{msg.content}</span>
-
-        {msg.type === "interaction" &&
+        {msg.type === WSMessageType.INTERACTION &&
           msg.duration &&
           msg.status === "active" && (
             <div className="mt-2 h-1 bg-white/10 rounded overflow-hidden">
               <div
                 className="h-full bg-primary animate-progress"
-                style={
-                  {
-                    "--duration": `${remainingDuration}ms`,
-                  } as React.CSSProperties
-                }
+                style={{ "--duration": `${remainingDuration}ms` } as React.CSSProperties}
               />
             </div>
           )}
-
         {msg.type === WSMessageType.INTERACTION && msg.messageId && (
           <div className="mt-2">
             {generatingCGMessages.includes(msg.messageId) ? (
@@ -404,7 +424,7 @@ const ChatRoom = (): JSX.Element => {
               </button>
             ) : (
               <button
-                onClick={() => handleGenerateCG(msg.messageId!)}
+                onClick={() => handleGenerateCG(msg.messageId!)} 
                 className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition"
               >
                 生成CG图片
@@ -412,7 +432,6 @@ const ChatRoom = (): JSX.Element => {
             )}
           </div>
         )}
-
         <span className="text-xs text-gray-500 ml-2">
           {new Date(msg.timestamp).toLocaleTimeString()}
         </span>
@@ -421,68 +440,59 @@ const ChatRoom = (): JSX.Element => {
   };
 
   return (
-    <div className="chat-container flex flex-col h-screen p-5 bg-black/80">
+    <div className="chat-container flex flex-col h-screen p-5 bg-black/80 text-white">
+      <div className="manager-info bg-black/50 p-3 rounded mb-4">
+        <h2 className="text-xl font-bold text-accent mb-2">
+          当前环境: {currentManagerInfo ? currentManagerInfo.type : "加载中..."}
+          {isFetchingManagerInfo && <span className="ml-2 text-sm text-gray-400">(正在加载...)</span>}
+        </h2>
+        {currentManagerInfo ? (
+          <>
+            <p className="text-gray-300"><span className="font-semibold text-gray-100">ID:</span> {currentManagerInfo.managerId}</p>
+            <p className="mt-1"><span className="font-semibold text-gray-100">描述:</span> {currentManagerInfo.description}</p>
+            <p className="mt-1 text-sky-300"><span className="font-semibold text-sky-100">动态:</span> {currentManagerInfo.dynamicDescription}</p>
+          </>
+        ) : (
+          !isFetchingManagerInfo && <p className="text-gray-400">未能加载环境信息。</p>
+        )}
+      </div>
+
       {!connected && (
         <div className="text-yellow-500 text-center mb-2">
-          正在连接聊天服务器...
+          正在连接服务器...
         </div>
       )}
 
       <div className="flex gap-4 flex-1 min-h-0">
-        <div className="w-48 flex flex-col gap-4">
-          <div className="flex-1 bg-white/10 rounded-lg p-3 min-h-0 flex flex-col">
-            <h3 className="text-primary font-bold mb-3 text-sm">
-              周围的人 ({onlineUsers.length})
-            </h3>
-            <div className="overflow-y-auto flex-1">
-              {onlineUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="text-white text-sm p-2 rounded bg-white/5 hover:bg-white/10 transition cursor-pointer"
-                  onClick={() => setSelectedUserId(user.id)}
-                >
-                  {user.nickname}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
         <div className="flex-1 flex flex-col min-h-0">
           {username && (
             <div className="text-white text-sm mb-2">当前用户：{username}</div>
           )}
-
           <div className="chat-messages flex-1 overflow-y-auto mb-5 p-3 bg-white/10 rounded-lg min-h-0">
-            {messages.map((msg: Message, index: number) => (
-              <div key={index}>{renderMessage(msg)}</div>
+            {messages.map((msg: Message) => (
+              <div key={msg.messageId || msg.timestamp.toString() + msg.username}>{renderMessage(msg)}</div> 
             ))}
           </div>
-
           <div className="chat-input flex gap-2 shrink-0">
             <input
               type="text"
               value={inputMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder={connected ? "输入消息..." : "正在连接..."}
-              disabled={!connected}
+              placeholder={connected ? "输入行动指令..." : "正在连接..."}
+              disabled={!connected || isSubmittingAction}
               className="flex-1 p-2 rounded bg-white/10 text-white border border-white/20 disabled:opacity-50"
             />
             <button
-              onClick={sendMessage}
-              disabled={!connected}
+              onClick={submitPlayerAction}
+              disabled={!connected || isSubmittingAction || !inputMessage.trim()}
               className="px-4 py-2 bg-primary hover:bg-secondary text-black rounded transition disabled:opacity-50"
             >
-              发送
+              {isSubmittingAction ? "提交中..." : "提交行动"}
             </button>
           </div>
         </div>
       </div>
-
-      {selectedUserId && (
-        <UserProfileCard userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
-      )}
 
       {cgModalVisible && cgImageUrl && (
         <CGModal imageUrl={cgImageUrl} onClose={() => setCgModalVisible(false)} />
