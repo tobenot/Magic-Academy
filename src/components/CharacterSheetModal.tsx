@@ -44,12 +44,12 @@ const CharacterSheetModal: React.FC<CharacterSheetModalProps> = ({ character, on
   if (!character) return null;
 
   const abilityLabels = {
-    str: { name: '力量', icon: '💪', color: 'text-red-400' },
-    dex: { name: '敏捷', icon: '🏃', color: 'text-green-400' },
-    con: { name: '体质', icon: '🛡️', color: 'text-blue-400' },
-    int: { name: '智力', icon: '🧠', color: 'text-purple-400' },
-    wis: { name: '感知', icon: '👁️', color: 'text-yellow-400' },
-    cha: { name: '魅力', icon: '✨', color: 'text-pink-400' }
+    str: { name: 'STR', desc: '力量' },
+    dex: { name: 'DEX', desc: '敏捷' },
+    con: { name: 'CON', desc: '体质' },
+    int: { name: 'INT', desc: '智力' },
+    wis: { name: 'WIS', desc: '感知' },
+    cha: { name: 'CHA', desc: '魅力' }
   };
 
   const renderAbility = (key: keyof typeof character.abilities) => {
@@ -58,114 +58,98 @@ const CharacterSheetModal: React.FC<CharacterSheetModalProps> = ({ character, on
     const modifier = Math.floor((value - 10) / 2);
     
     return (
-      <div className="group relative bg-gradient-to-br from-gray-800/40 to-gray-900/60 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-105">
-        <div className="flex flex-col items-center space-y-2">
-          <div className={`text-2xl ${ability.color} group-hover:scale-110 transition-transform duration-200`}>
-            {ability.icon}
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-white">{value}</div>
-            <div className={`text-xs font-medium ${modifier >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {modifier >= 0 ? '+' : ''}{modifier}
-            </div>
-            <div className="text-xs text-white/70 font-medium">{ability.name}</div>
-          </div>
+      <div className="bg-mud-bg border border-mud-border p-3 text-center">
+        <div className="text-primary font-bold text-lg font-mono">{ability.name}</div>
+        <div className="text-mud-text text-2xl font-mono font-bold">{value}</div>
+        <div className={`text-xs font-mono ${modifier >= 0 ? 'text-mud-success' : 'text-mud-danger'}`}>
+          {modifier >= 0 ? '+' : ''}{modifier}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300"></div>
+        <div className="text-xs text-mud-muted font-mono">{ability.desc}</div>
       </div>
     );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center p-4" onClick={onClose}>
       <div 
-        className="bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl text-white w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden"
+        className="bg-mud-panel border-2 border-primary text-mud-text w-full max-w-6xl max-h-[95vh] flex flex-col font-mono"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-primary/10 to-secondary/10 border-b border-white/10 p-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/5"></div>
-          <div className="relative flex justify-between items-start">
-            <div className="space-y-2">
-              <h2 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                {character.nickname}
+        <div className="border-b-2 border-primary p-4 bg-mud-bg">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-primary">
+                ========== CHARACTER SHEET 角色卡 ==========
               </h2>
-              <div className="flex items-center space-x-4 text-sm">
-                <span className="bg-primary/20 text-primary px-3 py-1 rounded-full font-medium">
-                  {character.staticProperties.role}
-                </span>
-                <span className="bg-secondary/20 text-secondary px-3 py-1 rounded-full font-medium">
-                  {character.staticProperties.mbti}
-                </span>
-                <span className="bg-white/10 text-white/80 px-3 py-1 rounded-full font-medium">
-                  {character.staticProperties.archetype}
-                </span>
+              <div className="mt-2 space-y-1">
+                <div className="text-mud-text">NAME 姓名: <span className="text-secondary font-bold">{character.nickname.toUpperCase()}</span></div>
+                <div className="flex space-x-4 text-sm">
+                  <span>ROLE 职业: <span className="text-primary">{character.staticProperties.role}</span></span>
+                  <span>TYPE 类型: <span className="text-primary">{character.staticProperties.mbti}</span></span>
+                  <span>CLASS 分类: <span className="text-primary">{character.staticProperties.archetype}</span></span>
+                </div>
               </div>
             </div>
             <button 
               onClick={onClose} 
-              className="group w-10 h-10 bg-white/10 hover:bg-red-500/20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+              className="bg-mud-danger text-white border border-mud-danger hover:bg-white hover:text-mud-danger px-4 py-2 font-bold transition-colors"
             >
-              <span className="text-xl text-white/70 group-hover:text-red-400">×</span>
+              [X] CLOSE 关闭
             </button>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* Abilities Grid */}
-          <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-primary flex items-center space-x-2">
-              <span>⚡</span>
-              <span>核心能力</span>
+        <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          {/* Abilities */}
+          <div>
+            <h3 className="text-xl font-bold text-secondary mb-3 border-b border-mud-border pb-1">
+              === CORE ABILITIES 核心能力 ===
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {Object.keys(abilityLabels).map(key => renderAbility(key as keyof typeof character.abilities))}
             </div>
           </div>
 
-          {/* Three Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column: Proficiencies & Inventory */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Proficiencies */}
-              <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-                <h4 className="text-xl font-bold text-green-400 mb-4 flex items-center space-x-2">
-                  <span>🎯</span>
-                  <span>熟练项</span>
+              <div className="bg-mud-bg border border-mud-border p-4">
+                <h4 className="text-lg font-bold text-accent mb-3 border-b border-mud-border pb-1">
+                  === SKILLS 技能 ===
                 </h4>
-                <div className="flex flex-wrap gap-2">
+                <div className="space-y-1 max-h-32 overflow-y-auto">
                   {character.proficiencies.map((prof, index) => (
-                    <span 
-                      key={prof} 
-                      className="bg-gradient-to-r from-green-500/20 to-green-600/20 text-green-300 text-xs font-semibold px-3 py-2 rounded-full border border-green-500/30 hover:scale-105 transition-transform duration-200"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      {prof}
-                    </span>
+                    <div key={prof} className="text-sm">
+                      <span className="text-mud-muted">{'>'}</span> <span className="text-mud-text">{prof}</span>
+                    </div>
                   ))}
+                  {character.proficiencies.length === 0 && (
+                    <div className="text-mud-muted text-center py-4">[ NO SKILLS 无技能 ]</div>
+                  )}
                 </div>
               </div>
 
               {/* Inventory */}
-              <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-                <h4 className="text-xl font-bold text-yellow-400 mb-4 flex items-center space-x-2">
-                  <span>🎒</span>
-                  <span>物品栏</span>
+              <div className="bg-mud-bg border border-mud-border p-4">
+                <h4 className="text-lg font-bold text-accent mb-3 border-b border-mud-border pb-1">
+                  === INVENTORY 物品栏 ===
                 </h4>
-                <div className="bg-black/30 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto">
+                <div className="max-h-40 overflow-y-auto">
                   {character.dynamicProperties.inventory.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {character.dynamicProperties.inventory.map((item: any, index: number) => (
-                        <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10 hover:bg-white/10 transition-colors duration-200">
-                          <span className="text-white/90">{item.name || '未知物品'}</span>
+                        <div key={index} className="text-sm bg-mud-panel border border-mud-border p-2">
+                          <span className="text-mud-muted">{'>'}</span> <span className="text-mud-text">{item.name || 'UNKNOWN ITEM 未知物品'}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-white/50 space-y-2">
-                      <span className="text-3xl">📦</span>
-                      <p className="text-sm">空空如也...</p>
+                    <div className="text-mud-muted text-center py-6">
+                      [ EMPTY 空 ]
                     </div>
                   )}
                 </div>
@@ -173,57 +157,45 @@ const CharacterSheetModal: React.FC<CharacterSheetModalProps> = ({ character, on
             </div>
 
             {/* Middle Column: Character Properties */}
-            <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <h4 className="text-xl font-bold text-blue-400 mb-6 flex items-center space-x-2">
-                <span>👤</span>
-                <span>角色特质</span>
+            <div className="bg-mud-bg border border-mud-border p-4">
+              <h4 className="text-lg font-bold text-accent mb-3 border-b border-mud-border pb-1">
+                === CHARACTER DATA 角色数据 ===
               </h4>
-              <div className="space-y-4 text-sm">
+              <div className="space-y-3 text-sm">
                 {[
-                  { label: '性格', value: character.staticProperties.personality, icon: '🎭' },
-                  { label: '特征', value: character.staticProperties.traits, icon: '⭐' },
-                  { label: '当前心情', value: character.dynamicProperties.current_mood, icon: '😊' },
-                  { label: '外貌', value: character.dynamicProperties.appearance, icon: '👀' },
-                  { label: '言谈风格', value: character.staticProperties.speech_style, icon: '💬' },
-                  { label: '目标', value: character.staticProperties.goals, icon: '🎯' }
-                ].map((prop, index) => (
-                  <div key={prop.label} className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition-all duration-200">
-                    <div className="flex items-start space-x-3">
-                      <span className="text-lg">{prop.icon}</span>
-                      <div className="flex-1">
-                        <div className="font-semibold text-white/90 mb-1">{prop.label}</div>
-                        <div className="text-white/70 leading-relaxed">{prop.value}</div>
-                      </div>
-                    </div>
+                  { label: 'PERSONALITY 性格', value: character.staticProperties.personality },
+                  { label: 'TRAITS 特征', value: character.staticProperties.traits },
+                  { label: 'MOOD 心情', value: character.dynamicProperties.current_mood },
+                  { label: 'APPEARANCE 外貌', value: character.dynamicProperties.appearance },
+                  { label: 'SPEECH 言谈', value: character.staticProperties.speech_style },
+                  { label: 'GOALS 目标', value: character.staticProperties.goals }
+                ].map((prop) => (
+                  <div key={prop.label} className="border-b border-mud-border pb-2">
+                    <div className="text-secondary font-bold mb-1">{prop.label}:</div>
+                    <div className="text-mud-text leading-relaxed pl-2">{prop.value}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Right Column: Context Log */}
-            <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/50 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <h4 className="text-xl font-bold text-purple-400 mb-4 flex items-center space-x-2">
-                <span>📜</span>
-                <span>情境日志</span>
+            <div className="bg-mud-bg border border-mud-border p-4">
+              <h4 className="text-lg font-bold text-accent mb-3 border-b border-mud-border pb-1">
+                === GAME LOG 游戏日志 ===
               </h4>
-              <div className="bg-black/30 rounded-xl p-4 h-[400px] overflow-y-auto">
-                <div className="space-y-3">
+              <div className="h-96 overflow-y-auto bg-mud-panel border border-mud-border p-2">
+                <div className="space-y-2">
                   {[...character.contextLog].reverse().map((log, index) => {
                     const cleanLog = log.startsWith('[') ? log.substring(log.indexOf(']') + 2) : log;
                     return (
-                      <div 
-                        key={index} 
-                        className="bg-white/5 rounded-lg p-3 border-l-2 border-purple-400/30 hover:bg-white/10 transition-colors duration-200"
-                        style={{ animationDelay: `${index * 100}ms` }}
-                      >
-                        <p className="text-white/80 text-xs leading-relaxed">{cleanLog}</p>
+                      <div key={index} className="text-xs">
+                        <span className="text-mud-muted">{'>'}</span> <span className="text-mud-text">{cleanLog}</span>
                       </div>
                     );
                   })}
                   {character.contextLog.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full text-white/50 space-y-2">
-                      <span className="text-3xl">📝</span>
-                      <p className="text-sm">暂无记录</p>
+                    <div className="text-mud-muted text-center py-8">
+                      [ NO RECORDS 无记录 ]
                     </div>
                   )}
                 </div>

@@ -4,8 +4,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#FFD700",
-        secondary: "#DAA520",
+        primary: "#d4af37",
+        secondary: "#b8860b",
+        accent: "#00ffff",
+        // MUD-style game colors
+        mud: {
+          bg: "#1a1a1a",
+          panel: "#2a2a2a",
+          border: "#404040",
+          text: "#e0e0e0",
+          muted: "#888888",
+          success: "#d4af37",
+          warning: "#ffaa00",
+          danger: "#ff4444",
+          info: "#0088ff",
+          magic: "#aa00ff"
+        },
+        // Flat status colors
+        status: {
+          hp: "#e53e3e",
+          stamina: "#38a169",
+          hunger: "#d69e2e",
+          thirst: "#3182ce",
+          mana: "#805ad5"
+        },
         action: {
           friendly: "#4CAF50",
           romantic: "#E91E63",
@@ -21,73 +43,27 @@ export default {
         },
       },
       fontFamily: {
-        cinzel: ["Cinzel", "serif"],
-        "noto-serif": ['"Noto Serif SC"', "serif"],
+        mono: ["'Courier New'", "monospace"],
+        game: ["'Consolas'", "'Monaco'", "monospace"],
       },
       keyframes: {
         "fade-in": {
-          "0%": { opacity: "0", transform: "scale(0.95)" },
-          "100%": { opacity: "1", transform: "scale(1)" },
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
         },
-        "rotate-in": {
-          "0%": {
-            opacity: "0",
-            transform: "rotate(-180deg) scale(0.3)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "rotate(0) scale(1)",
-          },
+        blink: {
+          "0%, 50%": { opacity: "1" },
+          "51%, 100%": { opacity: "0" },
         },
-        progress: {
-          "0%": { width: "0%" },
-          "100%": { width: "100%" },
-        },
-        "action-pulse": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
-        },
-        "action-complete": {
-          "0%": { transform: "scale(1)" },
-          "50%": { transform: "scale(1.05)" },
-          "100%": { transform: "scale(1)" },
-        },
-        "progress-glow": {
-          "0%": {
-            "box-shadow": "0 0 5px var(--action-color)",
-            opacity: "0.8",
-          },
-          "50%": {
-            "box-shadow": "0 0 15px var(--action-color)",
-            opacity: "1",
-          },
-          "100%": {
-            "box-shadow": "0 0 5px var(--action-color)",
-            opacity: "0.8",
-          },
-        },
-        "dropdown-open": {
-          "0%": { opacity: "0", transform: "translateY(-4px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
+        "progress-fill": {
+          "0%": { transform: "scaleX(0)" },
+          "100%": { transform: "scaleX(1)" },
         },
       },
       animation: {
-        "fade-in": "fade-in 0.5s ease-out",
-        "rotate-in": "rotate-in 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-        progress: "progress var(--duration) linear forwards",
-        "action-pulse": "action-pulse 2s ease-in-out infinite",
-        "action-complete": "action-complete 0.5s ease-out",
-        "progress-glow": "progress-glow 2s ease-in-out infinite",
-        "dropdown-open": "dropdown-open 0.2s ease-out",
-      },
-      boxShadow: {
-        action: "0 0 10px var(--action-color)",
-        dropdown:
-          "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-      },
-      backgroundImage: {
-        "action-gradient":
-          "linear-gradient(45deg, var(--action-from), var(--action-to))",
+        "fade-in": "fade-in 0.3s ease-out",
+        blink: "blink 1s infinite",
+        "progress-fill": "progress-fill 0.5s ease-out",
       },
       spacing: {
         128: "32rem",
@@ -106,21 +82,5 @@ export default {
       },
     },
   },
-  plugins: [
-    function ({ addUtilities }) {
-      const newUtilities = {
-        ".action-active": {
-          "--action-opacity": "1",
-          "--action-scale": "1",
-          transition: "all 0.3s ease",
-        },
-        ".action-completed": {
-          "--action-opacity": "0.7",
-          "--action-scale": "0.98",
-          transition: "all 0.3s ease",
-        },
-      };
-      addUtilities(newUtilities);
-    },
-  ],
+  plugins: [],
 };

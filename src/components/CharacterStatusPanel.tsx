@@ -24,10 +24,10 @@ interface CharacterStatusPanelProps {
 const CharacterStatusPanel: React.FC<CharacterStatusPanelProps> = ({ character, onShowSheet }) => {
   if (!character) {
     return (
-      <div className="bg-gradient-to-br from-gray-800/30 to-gray-900/50 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-2xl">
-        <div className="flex flex-col items-center justify-center h-32 space-y-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-white/70 text-sm font-medium">正在加载角色信息...</span>
+      <div className="bg-mud-panel border-2 border-mud-border p-4">
+        <div className="flex flex-col items-center justify-center h-32 space-y-2">
+          <div className="text-primary animate-blink">[ LOADING 加载中 ]</div>
+          <span className="text-mud-muted text-sm font-mono">正在加载角色信息...</span>
         </div>
       </div>
     );
@@ -44,103 +44,99 @@ const CharacterStatusPanel: React.FC<CharacterStatusPanelProps> = ({ character, 
     maxHydration,
   } = character.dynamicProperties;
 
-  const StatBar: React.FC<{ value: number; maxValue: number; label: string; color: string; icon: string; gradient: string }> = ({ 
-    value, maxValue, label, color, icon, gradient 
-  }) => {
+  const StatBar: React.FC<{ 
+    value: number; 
+    maxValue: number; 
+    label: string; 
+    color: string;
+    bgColor: string;
+  }> = ({ value, maxValue, label, color, bgColor }) => {
     const percentage = Math.min((value / maxValue) * 100, 100);
     const isLow = percentage < 30;
     const isCritical = percentage < 15;
     
     return (
-      <div className="relative group">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-            <span className={`text-sm ${color}`}>{icon}</span>
-            <span className="text-white/90 font-medium text-sm">{label}</span>
-          </div>
-          <div className={`text-xs font-bold ${isCritical ? 'text-red-400 animate-pulse' : isLow ? 'text-yellow-400' : 'text-white/80'}`}>
-            {value} / {maxValue}
-          </div>
+      <div className="mb-3">
+        <div className="flex justify-between items-center mb-1">
+          <span className={`text-sm font-mono ${color}`}>{label}</span>
+          <span className={`text-xs font-mono ${isCritical ? 'text-mud-danger animate-blink' : isLow ? 'text-mud-warning' : 'text-mud-text'}`}>
+            {value}/{maxValue}
+          </span>
         </div>
-        <div className="relative h-3 bg-black/40 rounded-full overflow-hidden shadow-inner">
+        <div className={`h-4 ${bgColor} border border-mud-border relative`}>
           <div 
-            className={`absolute top-0 left-0 h-full transition-all duration-700 ease-out rounded-full ${gradient} ${isCritical ? 'animate-pulse' : ''}`}
+            className={`h-full ${color.replace('text-', 'bg-')} transition-all duration-300 origin-left transform`}
             style={{ width: `${percentage}%` }}
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-progress opacity-60"></div>
+            {isCritical && (
+              <div className="absolute inset-0 bg-mud-danger animate-blink opacity-50"></div>
+            )}
           </div>
           {percentage > 0 && (
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-50"></div>
+            <div className="absolute right-1 top-0 h-full flex items-center">
+              <span className="text-xs font-mono text-black font-bold">
+                {Math.round(percentage)}%
+              </span>
+            </div>
           )}
         </div>
-        {isCritical && (
-          <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
-        )}
       </div>
     );
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-800/20 to-gray-900/40 backdrop-blur-xl rounded-2xl p-5 border border-white/10 shadow-2xl hover:shadow-primary/5 transition-all duration-300">
+    <div className="bg-mud-panel border-2 border-mud-border p-4 font-mono">
       {/* Header */}
-      <div className="relative mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl blur opacity-50"></div>
-        <div className="relative bg-gradient-to-r from-primary/5 to-secondary/5 rounded-xl p-4 text-center border border-primary/20">
-          <h3 className="text-primary font-bold text-lg tracking-wide">
-            {character.nickname}
-          </h3>
-          <div className="absolute top-2 right-2 w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
+      <div className="border-b border-mud-border pb-3 mb-4">
+        <div className="text-center">
+          <div className="text-primary text-lg font-bold mb-1">
+            [ {character.nickname.toUpperCase()} ]
+          </div>
+          <div className="text-xs text-mud-success">*** ONLINE 在线 ***</div>
         </div>
       </div>
 
       {/* Status Bars */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-1">
         <StatBar 
           value={hp} 
           maxValue={maxHp} 
-          label="生命值" 
-          color="text-red-400"
-          icon="❤️"
-          gradient="bg-gradient-to-r from-red-600 to-red-500"
+          label="HP 生命" 
+          color="text-status-hp"
+          bgColor="bg-mud-bg"
         />
         <StatBar 
           value={parseInt(stamina, 10) || 0} 
           maxValue={maxStamina} 
-          label="体力值" 
-          color="text-green-400"
-          icon="⚡"
-          gradient="bg-gradient-to-r from-green-600 to-green-500"
+          label="ST 体力" 
+          color="text-status-stamina"
+          bgColor="bg-mud-bg"
         />
         <StatBar 
           value={satiation} 
           maxValue={maxSatiation} 
-          label="饱食度" 
-          color="text-yellow-400"
-          icon="🍖"
-          gradient="bg-gradient-to-r from-yellow-600 to-yellow-500"
+          label="FD 饱食" 
+          color="text-status-hunger"
+          bgColor="bg-mud-bg"
         />
         <StatBar 
           value={hydration} 
           maxValue={maxHydration} 
-          label="水分值" 
-          color="text-blue-400"
-          icon="💧"
-          gradient="bg-gradient-to-r from-blue-600 to-blue-500"
+          label="H2O 水分" 
+          color="text-status-thirst"
+          bgColor="bg-mud-bg"
         />
       </div>
 
       {/* Character Sheet Button */}
-      <button
-        onClick={onShowSheet}
-        className="group relative w-full p-4 bg-gradient-to-r from-primary/80 to-secondary/80 hover:from-primary hover:to-secondary text-black rounded-xl transition-all duration-300 font-bold text-sm shadow-lg hover:shadow-primary/25 transform hover:scale-[1.02] active:scale-[0.98]"
-      >
-        <div className="flex items-center justify-center space-x-2">
-          <span>📋</span>
-          <span>查看角色卡</span>
-          <span className="group-hover:translate-x-1 transition-transform duration-200">→</span>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300"></div>
-      </button>
+      <div className="mt-4 pt-3 border-t border-mud-border">
+        <button
+          onClick={onShowSheet}
+          className="w-full bg-mud-bg border-2 border-primary text-primary hover:bg-primary hover:text-mud-bg font-mono font-bold py-2 px-4 transition-colors duration-200"
+        >
+          [ CHARACTER SHEET 角色卡 ]
+        </button>
+      </div>
     </div>
   );
 };

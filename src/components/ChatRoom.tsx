@@ -395,7 +395,7 @@ const ChatRoom = (): JSX.Element => {
     };
   }, [username]);
 
-  const renderMessage = (msg: Message) => {
+    const renderMessage = (msg: Message) => {
     const isManagerMessage = msg.username?.startsWith("Manager") || msg.initiatorId === 0;
     const currentUserId = localStorage.getItem("userId");
     const isPrivateMessageToCurrentUser = msg.targetUserId && msg.targetUserId === currentUserId;
@@ -405,21 +405,21 @@ const ChatRoom = (): JSX.Element => {
     const getMessageStyle = () => {
       if (msg.type === "system") {
         return {
-          container: "bg-gradient-to-r from-gray-700/30 to-gray-800/40 border-l-4 border-gray-500",
-          username: "text-gray-300",
-          icon: "⚙️"
+          container: "bg-mud-bg border-l-4 border-mud-muted",
+          username: "text-mud-muted",
+          prefix: "[SYS 系统]"
         };
       } else if (isManagerMessage) {
         return {
-          container: "bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-l-4 border-indigo-400",
-          username: "text-indigo-300",
-          icon: "🎭"
+          container: "bg-mud-panel border-l-4 border-primary",
+          username: "text-primary",
+          prefix: "[GM 管理]"
         };
       } else {
         return {
-          container: "bg-gradient-to-r from-white/5 to-white/10 border-l-4 border-primary/30",
-          username: "text-primary",
-          icon: "👤"
+          container: "bg-mud-bg border-l-4 border-secondary",
+          username: "text-secondary",
+          prefix: "[PLY 玩家]"
         };
       }
     };
@@ -429,30 +429,30 @@ const ChatRoom = (): JSX.Element => {
 
     return (
       <div className={classNames(
-        "group relative backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all duration-300 hover:scale-[1.01]",
+        "border border-mud-border p-3 mb-2 font-mono",
         messageStyle.container,
         {
-          "border-yellow-400/50 bg-gradient-to-r from-yellow-500/10 to-orange-500/10": isPrivateMessageToCurrentUser,
-          "ring-2 ring-primary/30 bg-gradient-to-r from-primary/10 to-secondary/10": isInteraction && msg.status === "active" && msg.duration
+          "border-mud-warning bg-mud-warning/10": isPrivateMessageToCurrentUser,
+          "border-accent bg-accent/10": isInteraction && msg.status === "active" && msg.duration
         }
       )}>
         {/* Private message indicator */}
         {isPrivateMessageToCurrentUser && (
-          <div className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-            私信
+          <div className="text-xs text-mud-warning font-bold mb-1">
+            *** PRIVATE MESSAGE 私信 ***
           </div>
         )}
 
         {/* Message Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-3">
-            <span className="text-lg">{messageStyle.icon}</span>
+        <div className="flex items-center justify-between mb-2 text-xs">
+          <div className="flex items-center space-x-2">
+            <span className="text-mud-muted">{messageStyle.prefix}</span>
             <span
               className={classNames(
-                "font-bold text-sm",
+                "font-bold",
                 messageStyle.username,
                 {
-                  "cursor-pointer hover:underline hover:scale-105 transition-transform duration-200": 
+                  "cursor-pointer hover:underline": 
                     !!msg.initiatorId && msg.initiatorId !== 0 && !isManagerMessage
                 }
               )}
@@ -462,42 +462,31 @@ const ChatRoom = (): JSX.Element => {
                 }
               }}
             >
-              {msg.username}
+              {msg.username?.toUpperCase()}
             </span>
-            {isManagerMessage && (
-              <span className="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-1 rounded-full font-medium">
-                GM
-              </span>
-            )}
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-white/50 font-mono">
-              {new Date(msg.timestamp).toLocaleTimeString()}
-            </span>
-            {msg.type === "system" && (
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></span>
-            )}
-          </div>
+          <span className="text-mud-muted">
+            {new Date(msg.timestamp).toLocaleTimeString()}
+          </span>
         </div>
 
         {/* Message Content */}
-        <div className="text-white/90 leading-relaxed mb-3">
+        <div className="text-mud-text leading-relaxed mb-2 text-sm">
           {msg.content}
         </div>
 
         {/* Interaction Progress Bar */}
         {isInteraction && msg.duration && msg.status === "active" && (
-          <div className="mb-3">
-            <div className="flex items-center justify-between text-xs text-white/60 mb-1">
-              <span>进行中...</span>
-              <span>{Math.ceil(remainingDuration / 1000)}s</span>
+          <div className="mb-2">
+            <div className="flex items-center justify-between text-xs text-mud-muted mb-1">
+              <span>ACTION IN PROGRESS 行动进行中</span>
+              <span>{Math.ceil(remainingDuration / 1000)}s remaining 剩余</span>
             </div>
-            <div className="h-2 bg-black/30 rounded-full overflow-hidden">
+            <div className="h-2 bg-mud-bg border border-mud-border">
               <div
-                className="h-full bg-gradient-to-r from-primary to-secondary animate-progress rounded-full"
-                style={{ "--duration": `${remainingDuration}ms` } as React.CSSProperties}
+                className="h-full bg-accent transition-all duration-300"
+                style={{ width: `${Math.max(0, (remainingDuration / (msg.duration || 1)) * 100)}%` }}
               >
-                <div className="h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -509,85 +498,67 @@ const ChatRoom = (): JSX.Element => {
             {generatingCGMessages.includes(msg.messageId) ? (
               <button
                 disabled
-                className="flex items-center space-x-2 px-4 py-2 bg-blue-500/50 text-white/70 rounded-lg cursor-not-allowed"
+                className="bg-mud-muted text-mud-text px-3 py-1 border border-mud-border text-xs font-mono cursor-not-allowed"
               >
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-sm">生成中...</span>
+                [ GENERATING... 生成中 ]
               </button>
             ) : (
               <button
                 onClick={() => handleGenerateCG(msg.messageId!)} 
-                className="group/btn flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-blue-500/25"
+                className="bg-mud-info text-white hover:bg-white hover:text-mud-info px-3 py-1 border border-mud-info text-xs font-mono font-bold transition-colors"
               >
-                <span className="text-sm">🎨</span>
-                <span className="text-sm font-medium">生成CG图片</span>
-                <span className="group-hover/btn:translate-x-1 transition-transform duration-200">→</span>
+                [ GENERATE CG 生成图片 ]
               </button>
             )}
           </div>
         )}
-
-        {/* Hover effect overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300 pointer-events-none"></div>
       </div>
     );
   };
 
-  return (
-    <div className="chat-container flex flex-col h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white overflow-hidden">
+    return (
+    <div className="chat-container flex flex-col h-screen bg-mud-bg text-mud-text font-mono overflow-hidden">
       {/* Environment Info Panel */}
-      <div className="bg-gradient-to-r from-gray-800/40 to-gray-900/60 backdrop-blur-xl border-b border-white/10 p-4 shadow-2xl">
+      <div className="bg-mud-panel border-b-2 border-mud-border p-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                当前环境: {currentManagerInfo ? currentManagerInfo.type : "加载中..."}
+              <div className="text-primary animate-blink">●</div>
+              <h2 className="text-xl font-bold text-primary">
+                ENVIRONMENT 环境: {currentManagerInfo ? currentManagerInfo.type.toUpperCase() : "LOADING... 加载中"}
               </h2>
               {isFetchingManagerInfo && (
-                <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <div className="text-primary animate-blink">[ LOADING 加载中 ]</div>
               )}
             </div>
             {username && (
-              <div className="flex items-center space-x-3 bg-white/5 rounded-full px-4 py-2 border border-white/10">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-sm font-medium text-white/90">当前用户：{username}</span>
+              <div className="flex items-center space-x-3 bg-mud-bg border border-mud-border px-3 py-1">
+                <div className="text-mud-success">●</div>
+                <span className="text-sm text-mud-text">USER 用户: {username.toUpperCase()}</span>
               </div>
             )}
           </div>
           {currentManagerInfo ? (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-blue-400">🏷️</span>
-                  <span className="font-semibold text-blue-300">环境ID</span>
-                </div>
-                <p className="text-white/80 font-mono text-sm">{currentManagerInfo.managerId}</p>
+              <div className="bg-mud-bg border border-mud-border p-3">
+                <div className="text-xs text-mud-muted mb-1">ENV_ID 环境ID:</div>
+                <p className="text-mud-text text-sm font-mono">{currentManagerInfo.managerId}</p>
               </div>
-              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-green-400">📝</span>
-                  <span className="font-semibold text-green-300">环境描述</span>
-                </div>
-                <p className="text-white/80 text-sm leading-relaxed">{currentManagerInfo.description}</p>
+              <div className="bg-mud-bg border border-mud-border p-3">
+                <div className="text-xs text-mud-muted mb-1">DESCRIPTION 描述:</div>
+                <p className="text-mud-text text-sm">{currentManagerInfo.description}</p>
               </div>
               {currentManagerInfo.dynamicDescription && (
-                <div className="md:col-span-2 bg-gradient-to-r from-sky-500/10 to-cyan-500/10 rounded-xl p-4 border border-sky-400/20">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <span className="text-sky-400">⚡</span>
-                    <span className="font-semibold text-sky-300">动态状况</span>
-                  </div>
-                  <p className="text-sky-100 text-sm leading-relaxed">{currentManagerInfo.dynamicDescription}</p>
+                <div className="md:col-span-2 bg-mud-bg border border-accent p-3">
+                  <div className="text-xs text-accent mb-1">DYNAMIC_STATUS 动态状况:</div>
+                  <p className="text-mud-text text-sm">{currentManagerInfo.dynamicDescription}</p>
                 </div>
               )}
             </div>
           ) : (
             !isFetchingManagerInfo && (
-              <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-red-400">⚠️</span>
-                  <p className="text-red-300">未能加载环境信息</p>
-                </div>
+              <div className="mt-4 bg-mud-bg border border-mud-danger p-3">
+                <div className="text-mud-danger text-sm">*** ERROR 错误: FAILED TO LOAD ENVIRONMENT INFO 无法加载环境信息 ***</div>
               </div>
             )
           )}
@@ -596,16 +567,16 @@ const ChatRoom = (): JSX.Element => {
 
       {/* Connection Status */}
       {!connected && (
-        <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-b border-yellow-400/20 p-3">
+        <div className="bg-mud-warning/20 border-b border-mud-warning p-3">
           <div className="max-w-7xl mx-auto flex items-center justify-center space-x-3">
-            <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-yellow-300 font-medium">正在连接服务器...</span>
+            <div className="text-mud-warning animate-blink">[ CONNECTING 连接中 ]</div>
+            <span className="text-mud-warning font-bold">CONNECTING TO SERVER... 正在连接服务器</span>
           </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-6 p-6 min-h-0 max-w-7xl mx-auto w-full">
+      <div className="flex-1 flex gap-4 p-4 min-h-0 max-w-7xl mx-auto w-full">
         {/* Character Status Panel */}
         <div className="w-80 shrink-0">
           <CharacterStatusPanel 
@@ -615,59 +586,46 @@ const ChatRoom = (): JSX.Element => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col min-h-0 bg-gradient-to-br from-gray-800/20 to-gray-900/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 bg-mud-panel border-2 border-mud-border overflow-hidden">
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 min-h-0">
             {messages.map((msg: Message) => (
               <div key={msg.messageId || msg.timestamp.toString() + msg.username}>
                 {renderMessage(msg)}
               </div>
             ))}
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-white/50 space-y-4">
-                <div className="text-6xl">💬</div>
-                <p className="text-lg font-medium">开始你的冒险吧！</p>
-                <p className="text-sm text-white/30">在下方输入你的行动指令</p>
+              <div className="flex flex-col items-center justify-center h-full text-mud-muted space-y-4">
+                <div className="text-4xl">[ MUD TERMINAL 终端 ]</div>
+                <p className="text-sm">ENTER COMMAND TO BEGIN ADVENTURE 输入指令开始冒险</p>
+                <p className="text-xs text-mud-muted">TYPE ACTION IN INPUT FIELD BELOW 在下方输入框中输入行动</p>
               </div>
             )}
           </div>
 
           {/* Input Area */}
-          <div className="bg-gradient-to-r from-gray-800/50 to-gray-900/70 backdrop-blur-sm border-t border-white/10 p-6">
-            <div className="flex gap-4">
+          <div className="bg-mud-bg border-t-2 border-mud-border p-4">
+            <div className="flex gap-2">
               <div className="flex-1 relative">
                 <input
                   type="text"
                   value={inputMessage}
                   onChange={handleInputChange}
                   onKeyPress={handleKeyPress}
-                  placeholder={connected ? "输入你的行动指令..." : "正在连接..."}
+                  placeholder={connected ? "Enter command... 输入指令" : "Connecting... 连接中"}
                   disabled={!connected || isSubmittingAction}
-                  className="w-full p-4 bg-white/5 backdrop-blur-sm text-white border border-white/20 rounded-xl focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none disabled:opacity-50 transition-all duration-200 placeholder-white/40"
+                  className="w-full p-2 bg-mud-panel text-mud-text border border-mud-border focus:border-primary focus:outline-none disabled:opacity-50 font-mono placeholder-mud-muted"
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/30">
-                  <span className="text-sm">Enter ↵</span>
+                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-mud-muted">
+                  <span className="text-xs">[ENTER 回车]</span>
                 </div>
               </div>
               <button
                 onClick={submitPlayerAction}
                 disabled={!connected || isSubmittingAction || !inputMessage.trim()}
-                className="group relative px-8 py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-black rounded-xl transition-all duration-300 font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-primary/25 transform hover:scale-105 active:scale-95"
+                className="px-4 py-2 bg-primary text-mud-bg hover:bg-secondary hover:text-mud-bg border border-primary font-mono font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                <div className="flex items-center space-x-2">
-                  {isSubmittingAction ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
-                      <span>提交中...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>🚀</span>
-                      <span>提交行动</span>
-                    </>
-                  )}
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity duration-300"></div>
+                {isSubmittingAction ? "[ SENDING... 发送中 ]" : "[ SEND 发送 ]"}
               </button>
             </div>
           </div>
@@ -681,7 +639,7 @@ const ChatRoom = (): JSX.Element => {
           onClose={() => setIsSheetVisible(false)} 
         />
       )}
-      
+
       {cgModalVisible && cgImageUrl && (
         <CGModal imageUrl={cgImageUrl} onClose={() => setCgModalVisible(false)} />
       )}
