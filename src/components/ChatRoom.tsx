@@ -80,6 +80,9 @@ const ChatRoom = (): JSX.Element => {
   const [characterInfo, setCharacterInfo] = useState<Character | null>(null);
   const [isSheetVisible, setIsSheetVisible] = useState<boolean>(false);
 
+  // 新增移动端适配状态
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+
   const fetchCharacterData = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -429,7 +432,7 @@ const ChatRoom = (): JSX.Element => {
 
     return (
       <div className={classNames(
-        "border border-mud-border p-3 mb-2 font-mono",
+        "border border-mud-border p-2 lg:p-3 mb-2 font-mono",
         messageStyle.container,
         {
           "border-mud-warning bg-mud-warning/10": isPrivateMessageToCurrentUser,
@@ -439,17 +442,18 @@ const ChatRoom = (): JSX.Element => {
         {/* Private message indicator */}
         {isPrivateMessageToCurrentUser && (
           <div className="text-xs text-mud-warning font-bold mb-1">
-            *** PRIVATE MESSAGE 私信 ***
+            <span className="hidden sm:inline">*** PRIVATE MESSAGE 私信 ***</span>
+            <span className="sm:hidden">*** 私信 ***</span>
           </div>
         )}
 
         {/* Message Header */}
         <div className="flex items-center justify-between mb-2 text-xs">
-          <div className="flex items-center space-x-2">
-            <span className="text-mud-muted">{messageStyle.prefix}</span>
+          <div className="flex items-center space-x-1 lg:space-x-2 min-w-0 flex-1">
+            <span className="text-mud-muted shrink-0">{messageStyle.prefix}</span>
             <span
               className={classNames(
-                "font-bold",
+                "font-bold truncate",
                 messageStyle.username,
                 {
                   "cursor-pointer hover:underline": 
@@ -465,13 +469,16 @@ const ChatRoom = (): JSX.Element => {
               {msg.username?.toUpperCase()}
             </span>
           </div>
-          <span className="text-mud-muted">
-            {new Date(msg.timestamp).toLocaleTimeString()}
+          <span className="text-mud-muted shrink-0 text-xs">
+            {new Date(msg.timestamp).toLocaleTimeString('zh-CN', { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
           </span>
         </div>
 
         {/* Message Content */}
-        <div className="text-mud-text leading-relaxed mb-2 text-sm">
+        <div className="text-mud-text leading-relaxed mb-2 text-xs lg:text-sm break-words">
           {msg.content}
         </div>
 
@@ -479,8 +486,9 @@ const ChatRoom = (): JSX.Element => {
         {isInteraction && msg.duration && msg.status === "active" && (
           <div className="mb-2">
             <div className="flex items-center justify-between text-xs text-mud-muted mb-1">
-              <span>ACTION IN PROGRESS 行动进行中</span>
-              <span>{Math.ceil(remainingDuration / 1000)}s remaining 剩余</span>
+              <span className="hidden sm:inline">ACTION IN PROGRESS 行动进行中</span>
+              <span className="sm:hidden">进行中</span>
+              <span>{Math.ceil(remainingDuration / 1000)}s</span>
             </div>
             <div className="h-2 bg-mud-bg border border-mud-border">
               <div
@@ -498,16 +506,18 @@ const ChatRoom = (): JSX.Element => {
             {generatingCGMessages.includes(msg.messageId) ? (
               <button
                 disabled
-                className="bg-mud-muted text-mud-text px-3 py-1 border border-mud-border text-xs font-mono cursor-not-allowed"
+                className="bg-mud-muted text-mud-text px-2 lg:px-3 py-1 border border-mud-border text-xs font-mono cursor-not-allowed"
               >
-                [ GENERATING... 生成中 ]
+                <span className="hidden sm:inline">[ GENERATING... 生成中 ]</span>
+                <span className="sm:hidden">生成中...</span>
               </button>
             ) : (
               <button
                 onClick={() => handleGenerateCG(msg.messageId!)} 
-                className="bg-mud-info text-white hover:bg-white hover:text-mud-info px-3 py-1 border border-mud-info text-xs font-mono font-bold transition-colors"
+                className="bg-mud-info text-white hover:bg-white hover:text-mud-info px-2 lg:px-3 py-1 border border-mud-info text-xs font-mono font-bold transition-colors"
               >
-                [ GENERATE CG 生成图片 ]
+                <span className="hidden sm:inline">[ GENERATE CG 生成图片 ]</span>
+                <span className="sm:hidden">生成图片</span>
               </button>
             )}
           </div>
@@ -518,47 +528,89 @@ const ChatRoom = (): JSX.Element => {
 
     return (
     <div className="chat-container flex flex-col h-screen bg-mud-bg text-mud-text font-mono overflow-hidden">
+      {/* Mobile Top Character Bar - 移动端顶部角色信息条 */}
+      <div className="lg:hidden bg-mud-panel border-b border-mud-border p-2">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="flex items-center space-x-2 bg-mud-bg hover:bg-mud-border border border-mud-border px-3 py-1 transition-colors"
+          >
+            <div className="w-4 h-4 flex flex-col justify-center space-y-1">
+              <div className="h-0.5 bg-mud-text"></div>
+              <div className="h-0.5 bg-mud-text"></div>
+              <div className="h-0.5 bg-mud-text"></div>
+            </div>
+            <span className="text-xs">CHARACTER 角色</span>
+          </button>
+          
+          {characterInfo && (
+            <div className="flex items-center space-x-4 text-xs">
+              <div className="flex items-center space-x-1">
+                <span className="text-mud-danger">HP</span>
+                <div className="w-12 h-2 bg-mud-bg border border-mud-border">
+                  <div 
+                    className="h-full bg-mud-danger" 
+                    style={{ width: `${(characterInfo.dynamicProperties.hp / characterInfo.dynamicProperties.maxHp) * 100}%` }}
+                  ></div>
+                </div>
+                <span className="text-mud-muted">{characterInfo.dynamicProperties.hp}/{characterInfo.dynamicProperties.maxHp}</span>
+              </div>
+              <button
+                onClick={() => setIsSheetVisible(true)}
+                className="bg-primary text-mud-bg px-2 py-1 hover:bg-secondary transition-colors"
+              >
+                SHEET 详情
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Environment Info Panel */}
-      <div className="bg-mud-panel border-b-2 border-mud-border p-4">
+      <div className="bg-mud-panel border-b-2 border-mud-border p-2 lg:p-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-2 lg:space-y-0">
+            <div className="flex items-center space-x-2 lg:space-x-4">
               <div className="text-primary animate-blink">●</div>
-              <h2 className="text-xl font-bold text-primary">
-                ENVIRONMENT 环境: {currentManagerInfo ? currentManagerInfo.type.toUpperCase() : "LOADING... 加载中"}
+              <h2 className="text-sm lg:text-xl font-bold text-primary">
+                <span className="hidden sm:inline">ENVIRONMENT 环境: </span>
+                {currentManagerInfo ? currentManagerInfo.type.toUpperCase() : "LOADING... 加载中"}
               </h2>
               {isFetchingManagerInfo && (
-                <div className="text-primary animate-blink">[ LOADING 加载中 ]</div>
+                <div className="text-primary animate-blink text-xs lg:text-sm">[ LOADING 加载中 ]</div>
               )}
             </div>
             {username && (
-              <div className="flex items-center space-x-3 bg-mud-bg border border-mud-border px-3 py-1">
+              <div className="flex items-center space-x-2 lg:space-x-3 bg-mud-bg border border-mud-border px-2 lg:px-3 py-1 self-start lg:self-auto">
                 <div className="text-mud-success">●</div>
-                <span className="text-sm text-mud-text">USER 用户: {username.toUpperCase()}</span>
+                <span className="text-xs lg:text-sm text-mud-text">
+                  <span className="hidden sm:inline">USER 用户: </span>
+                  {username.toUpperCase()}
+                </span>
               </div>
             )}
           </div>
           {currentManagerInfo ? (
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-mud-bg border border-mud-border p-3">
+            <div className="mt-2 lg:mt-4 grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-4">
+              <div className="bg-mud-bg border border-mud-border p-2 lg:p-3 order-2 lg:order-1">
                 <div className="text-xs text-mud-muted mb-1">ENV_ID 环境ID:</div>
-                <p className="text-mud-text text-sm font-mono">{currentManagerInfo.managerId}</p>
+                <p className="text-mud-text text-xs lg:text-sm font-mono break-all">{currentManagerInfo.managerId}</p>
               </div>
-              <div className="bg-mud-bg border border-mud-border p-3">
+              <div className="bg-mud-bg border border-mud-border p-2 lg:p-3 order-1 lg:order-2">
                 <div className="text-xs text-mud-muted mb-1">DESCRIPTION 描述:</div>
-                <p className="text-mud-text text-sm">{currentManagerInfo.description}</p>
+                <p className="text-mud-text text-xs lg:text-sm">{currentManagerInfo.description}</p>
               </div>
               {currentManagerInfo.dynamicDescription && (
-                <div className="md:col-span-2 bg-mud-bg border border-accent p-3">
+                <div className="lg:col-span-2 bg-mud-bg border border-accent p-2 lg:p-3 order-3">
                   <div className="text-xs text-accent mb-1">DYNAMIC_STATUS 动态状况:</div>
-                  <p className="text-mud-text text-sm">{currentManagerInfo.dynamicDescription}</p>
+                  <p className="text-mud-text text-xs lg:text-sm">{currentManagerInfo.dynamicDescription}</p>
                 </div>
               )}
             </div>
           ) : (
             !isFetchingManagerInfo && (
-              <div className="mt-4 bg-mud-bg border border-mud-danger p-3">
-                <div className="text-mud-danger text-sm">*** ERROR 错误: FAILED TO LOAD ENVIRONMENT INFO 无法加载环境信息 ***</div>
+              <div className="mt-2 lg:mt-4 bg-mud-bg border border-mud-danger p-2 lg:p-3">
+                <div className="text-mud-danger text-xs lg:text-sm">*** ERROR 错误: FAILED TO LOAD ENVIRONMENT INFO 无法加载环境信息 ***</div>
               </div>
             )
           )}
@@ -567,44 +619,78 @@ const ChatRoom = (): JSX.Element => {
 
       {/* Connection Status */}
       {!connected && (
-        <div className="bg-mud-warning/20 border-b border-mud-warning p-3">
-          <div className="max-w-7xl mx-auto flex items-center justify-center space-x-3">
-            <div className="text-mud-warning animate-blink">[ CONNECTING 连接中 ]</div>
-            <span className="text-mud-warning font-bold">CONNECTING TO SERVER... 正在连接服务器</span>
+        <div className="bg-mud-warning/20 border-b border-mud-warning p-2 lg:p-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-center space-x-2 lg:space-x-3">
+            <div className="text-mud-warning animate-blink text-xs lg:text-sm">[ CONNECTING 连接中 ]</div>
+            <span className="text-mud-warning font-bold text-xs lg:text-sm text-center">
+              <span className="hidden sm:inline">CONNECTING TO SERVER... 正在连接服务器</span>
+              <span className="sm:hidden">连接中...</span>
+            </span>
           </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex gap-4 p-4 min-h-0 max-w-7xl mx-auto w-full">
-        {/* Character Status Panel */}
-        <div className="w-80 shrink-0">
+      <div className="flex-1 flex min-h-0 max-w-7xl mx-auto w-full relative">
+        {/* Desktop Character Status Panel */}
+        <div className="hidden lg:block w-80 shrink-0 p-4">
           <CharacterStatusPanel 
             character={characterInfo} 
             onShowSheet={() => setIsSheetVisible(true)} 
           />
         </div>
 
+        {/* Mobile Sidebar Overlay */}
+        {isMobileSidebarOpen && (
+          <div className="lg:hidden fixed inset-0 z-50 flex">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/50" 
+              onClick={() => setIsMobileSidebarOpen(false)}
+            ></div>
+            
+            {/* Sidebar */}
+            <div className="relative w-80 max-w-[85vw] bg-mud-bg border-r-2 border-mud-border p-4 overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-primary font-bold">CHARACTER INFO 角色信息</h3>
+                <button
+                  onClick={() => setIsMobileSidebarOpen(false)}
+                  className="bg-mud-danger text-white px-2 py-1 text-xs hover:bg-white hover:text-mud-danger transition-colors"
+                >
+                  ✕ CLOSE 关闭
+                </button>
+              </div>
+              <CharacterStatusPanel 
+                character={characterInfo} 
+                onShowSheet={() => {
+                  setIsSheetVisible(true);
+                  setIsMobileSidebarOpen(false);
+                }} 
+              />
+            </div>
+          </div>
+        )}
+
         {/* Chat Area */}
-        <div className="flex-1 flex flex-col min-h-0 bg-mud-panel border-2 border-mud-border overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 bg-mud-panel border-2 border-mud-border overflow-hidden lg:mx-4 mx-2 my-2 lg:my-4">
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto p-4 min-h-0">
+          <div className="flex-1 overflow-y-auto p-2 lg:p-4 min-h-0">
             {messages.map((msg: Message) => (
               <div key={msg.messageId || msg.timestamp.toString() + msg.username}>
                 {renderMessage(msg)}
               </div>
             ))}
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-mud-muted space-y-4">
-                <div className="text-4xl">[ MUD TERMINAL 终端 ]</div>
-                <p className="text-sm">ENTER COMMAND TO BEGIN ADVENTURE 输入指令开始冒险</p>
-                <p className="text-xs text-mud-muted">TYPE ACTION IN INPUT FIELD BELOW 在下方输入框中输入行动</p>
+              <div className="flex flex-col items-center justify-center h-full text-mud-muted space-y-2 lg:space-y-4">
+                <div className="text-2xl lg:text-4xl text-center">[ MUD TERMINAL 终端 ]</div>
+                <p className="text-xs lg:text-sm text-center px-4">ENTER COMMAND TO BEGIN ADVENTURE 输入指令开始冒险</p>
+                <p className="text-xs text-mud-muted text-center px-4">TYPE ACTION IN INPUT FIELD BELOW 在下方输入框中输入行动</p>
               </div>
             )}
           </div>
 
           {/* Input Area */}
-          <div className="bg-mud-bg border-t-2 border-mud-border p-4">
+          <div className="bg-mud-bg border-t-2 border-mud-border p-2 lg:p-4">
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <input
@@ -614,18 +700,23 @@ const ChatRoom = (): JSX.Element => {
                   onKeyPress={handleKeyPress}
                   placeholder={connected ? "Enter command... 输入指令" : "Connecting... 连接中"}
                   disabled={!connected || isSubmittingAction}
-                  className="w-full p-2 bg-mud-panel text-mud-text border border-mud-border focus:border-primary focus:outline-none disabled:opacity-50 font-mono placeholder-mud-muted"
+                  className="w-full p-2 lg:p-2 bg-mud-panel text-mud-text border border-mud-border focus:border-primary focus:outline-none disabled:opacity-50 font-mono placeholder-mud-muted text-sm lg:text-base"
                 />
-                <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-mud-muted">
+                <div className="hidden lg:block absolute right-2 top-1/2 transform -translate-y-1/2 text-mud-muted">
                   <span className="text-xs">[ENTER 回车]</span>
                 </div>
               </div>
               <button
                 onClick={submitPlayerAction}
                 disabled={!connected || isSubmittingAction || !inputMessage.trim()}
-                className="px-4 py-2 bg-primary text-mud-bg hover:bg-secondary hover:text-mud-bg border border-primary font-mono font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-2 lg:px-4 py-2 bg-primary text-mud-bg hover:bg-secondary hover:text-mud-bg border border-primary font-mono font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm"
               >
-                {isSubmittingAction ? "[ SENDING... 发送中 ]" : "[ SEND 发送 ]"}
+                <span className="hidden sm:inline">
+                  {isSubmittingAction ? "[ SENDING... 发送中 ]" : "[ SEND 发送 ]"}
+                </span>
+                <span className="sm:hidden">
+                  {isSubmittingAction ? "发送中" : "发送"}
+                </span>
               </button>
             </div>
           </div>
