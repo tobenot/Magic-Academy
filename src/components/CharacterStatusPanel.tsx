@@ -48,37 +48,40 @@ const CharacterStatusPanel: React.FC<CharacterStatusPanelProps> = ({ character, 
     value: number; 
     maxValue: number; 
     label: string; 
-    color: string;
-    bgColor: string;
-  }> = ({ value, maxValue, label, color, bgColor }) => {
-    const percentage = Math.min((value / maxValue) * 100, 100);
+  }> = ({ value, maxValue, label }) => {
+    const percentage = maxValue > 0 ? Math.min((value / maxValue) * 100, 100) : 0;
     const isLow = percentage < 30;
     const isCritical = percentage < 15;
+
+    const getBarColors = () => {
+      if (label.startsWith('HP')) return { text: 'text-mud-danger', bg: 'bg-mud-danger' };
+      if (label.startsWith('ST')) return { text: 'text-mud-success', bg: 'bg-mud-success' };
+      if (label.startsWith('FD')) return { text: 'text-mud-warning', bg: 'bg-mud-warning' };
+      if (label.startsWith('H2O')) return { text: 'text-mud-info', bg: 'bg-mud-info' };
+      return { text: 'text-primary', bg: 'bg-primary' };
+    };
+
+    const barColors = getBarColors();
     
     return (
       <div className="mb-3">
         <div className="flex justify-between items-center mb-1">
-          <span className={`text-sm font-mono ${color}`}>{label}</span>
+          <span className={`text-sm font-mono ${barColors.text}`}>{label}</span>
           <span className={`text-xs font-mono ${isCritical ? 'text-mud-danger animate-blink' : isLow ? 'text-mud-warning' : 'text-mud-text'}`}>
             {value}/{maxValue}
           </span>
         </div>
-        <div className={`h-4 ${bgColor} border border-mud-border relative`}>
+        <div className="h-4 bg-mud-bg border border-mud-border relative">
           <div 
-            className={`h-full ${color.replace('text-', 'bg-')} transition-all duration-300 origin-left transform`}
+            className={`h-full ${barColors.bg} transition-all duration-300 origin-left transform`}
             style={{ width: `${percentage}%` }}
           >
-            {isCritical && (
-              <div className="absolute inset-0 bg-mud-danger animate-blink opacity-50"></div>
-            )}
           </div>
-          {percentage > 0 && (
-            <div className="absolute right-1 top-0 h-full flex items-center">
-              <span className="text-xs font-mono text-black font-bold">
-                {Math.round(percentage)}%
-              </span>
-            </div>
-          )}
+          <div className="absolute inset-0 flex justify-end items-center pr-2">
+            <span className="text-xs font-mono text-black font-bold opacity-75">
+              {Math.round(percentage)}%
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -102,29 +105,21 @@ const CharacterStatusPanel: React.FC<CharacterStatusPanelProps> = ({ character, 
           value={hp} 
           maxValue={maxHp} 
           label="HP 生命" 
-          color="text-status-hp"
-          bgColor="bg-mud-bg"
         />
         <StatBar 
           value={parseInt(stamina, 10) || 0} 
           maxValue={maxStamina} 
           label="ST 体力" 
-          color="text-status-stamina"
-          bgColor="bg-mud-bg"
         />
         <StatBar 
           value={satiation} 
           maxValue={maxSatiation} 
           label="FD 饱食" 
-          color="text-status-hunger"
-          bgColor="bg-mud-bg"
         />
         <StatBar 
           value={hydration} 
           maxValue={maxHydration} 
           label="H2O 水分" 
-          color="text-status-thirst"
-          bgColor="bg-mud-bg"
         />
       </div>
 
