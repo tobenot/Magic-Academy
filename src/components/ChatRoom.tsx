@@ -10,12 +10,10 @@ import { WebSocketService } from "../services/WebSocketService";
 import { AuthService } from "../services/AuthService";
 import {
   WSMessageType,
-  WSUser,
   WSServerMessage,
   WSMessageData,
   WSChatHistoryData,
 } from "../types/websocket";
-import UserProfileCard from "./UserProfile";
 import classNames from "classnames";
 import CGModal from "./CGModal";
 import CharacterStatusPanel from './CharacterStatusPanel';

@@ -145,7 +145,7 @@ const CharacterSheetModal: React.FC<CharacterSheetModalProps> = ({ character, on
                   === SKILLS 技能 ===
                 </h4>
                 <div className="space-y-1 max-h-32 overflow-y-auto pr-2">
-                  {character.proficiencies.map((prof, index) => (
+                  {character.proficiencies.map((prof) => (
                     <div key={prof} className="text-xs lg:text-sm">
                       <span className="text-mud-muted">{'>'}</span> <span className="text-mud-text">{prof}</span>
                     </div>
